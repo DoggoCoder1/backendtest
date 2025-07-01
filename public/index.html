@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+  <body>
+    <button onclick="sayHello()">Say Hello</button>
+
+    <script>
+      async function sayHello() {
+        const res = await fetch("/api/hello");
+        const data = await res.json();
+        console.log(data.message); // should log "Hello, World!"
+      }
+    </script>
+  </body>
+</html>

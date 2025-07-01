@@ -30,7 +30,6 @@ export default async function handler(req, res) {
     res.end(JSON.stringify({
       message: 'Hello from your vanilla Node.js API!',
       timestamp: new Date().toISOString(),
-      yourIp: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
       pageViewCount: currentViewCount
     }));
 

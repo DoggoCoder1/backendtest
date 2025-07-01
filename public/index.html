@@ -5,10 +5,18 @@
 
     <script>
       async function sayHello() {
-        const res = await fetch("/api/hello");
-        const data = await res.json();
-        console.log(data.message); // should log "Hello, World!"
-      }
+  try {
+    const res = await fetch('https://backendtest-ebon.vercel.app/api/hello');
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+    const data = await res.json();
+    console.log(data);
+  } catch (err) {
+    console.error('Fetch error:', err);
+  }
+}
+
     </script>
   </body>
 </html>

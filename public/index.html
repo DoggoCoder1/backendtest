@@ -1,22 +1,47 @@
 <!DOCTYPE html>
-<html>
-  <body>
-    <button onclick="sayHello()">Say Hello</button>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page View Counter</title>
+</head>
+<body>
+    <h1 id="viewCount">Loading...</h1>
 
     <script>
-      async function sayHello() {
-  try {
-    const res = await fetch('https://backendtest-ebon.vercel.app/api/hello');
-    if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
-    }
-    const data = await res.json();
-    console.log(data);
-  } catch (err) {
-    console.error('Fetch error:', err);
-  }
-}
+        // Function to fetch the page view count from the API
+        async function fetchPageViewCount() {
+            const viewCountElement = document.getElementById('viewCount');
+            viewCountElement.textContent = 'Loading...'; // Show loading state
 
+            try {
+                // Fetch data from your /api/hello endpoint
+                const response = await fetch('/api/hello');
+
+                // Check if the response was successful
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                // Parse the JSON response
+                const data = await response.json();
+
+                // Check if pageViewCount exists in the response
+                if (data && typeof data.pageViewCount !== 'undefined') {
+                    viewCountElement.textContent = `Page Views: ${data.pageViewCount}`; // Updated text for plain H1
+                } else {
+                    viewCountElement.textContent = 'Error: Count not found';
+                    console.error('API response did not contain pageViewCount:', data);
+                }
+            } catch (error) {
+                // Handle any errors during the fetch or parsing
+                viewCountElement.textContent = 'Error loading count';
+                console.error('Failed to fetch page view count:', error);
+            }
+        }
+
+        // Call the function when the page loads
+        document.addEventListener('DOMContentLoaded', fetchPageViewCount);
     </script>
-  </body>
+</body>
 </html>

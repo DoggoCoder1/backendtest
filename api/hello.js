@@ -7,7 +7,7 @@ const pool = new Pool({
 
 export default async function handler(req, res) {
   if (process.env.maintmode === 'true') {
-  return res.status(503).json({ message: 'disabled' });
+    return res.status(503).json({ message: 'Maintenance' });
   }
 
   const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress;

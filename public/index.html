@@ -3,19 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Page View Counter</title>
+    <title>wowdog clicker</title>
 </head>
 <body>
     <h1 id="viewCount">Loading...</h1>
+    <button id="clickButton">Click</button> <!-- Added an ID to the button -->
+    <p id="message"></p> <!-- Added a paragraph for messages -->
 
     <script>
-        // Function to fetch the page view count from the API
-        async function fetchPageViewCount() {
-            const viewCountElement = document.getElementById('viewCount');
-            viewCountElement.textContent = 'Loading...'; // Show loading state
+        const viewCountElement = document.getElementById('viewCount');
+        const clickButton = document.getElementById('clickButton'); // Get the button element
+        const messageElement = document.getElementById('message'); // Get the message element
 
+        // Function to update the display with the latest count
+        function updateDisplay(count) {
+            viewCountElement.textContent = `Global Clicks: ${count}`;
+        }
+
+        // Function to fetch the current count (GET request)
+        async function fetchCurrentCount() {
             try {
-                // Fetch data from your /api/hello endpoint
+                // Fetch data from your /api/hello endpoint (GET request by default)
                 const response = await fetch('/api/hello');
 
                 // Check if the response was successful
@@ -26,22 +34,66 @@
                 // Parse the JSON response
                 const data = await response.json();
 
-                // Check if pageViewCount exists in the response
-                if (data && typeof data.pageViewCount !== 'undefined') {
-                    viewCountElement.textContent = `Page Views: ${data.pageViewCount}`; // Updated text for plain H1
+                // Check if currentCount exists in the response (from GET request)
+                if (data && typeof data.currentCount !== 'undefined') {
+                    updateDisplay(data.currentCount);
                 } else {
-                    viewCountElement.textContent = 'Error: Count not found';
-                    console.error('API response did not contain pageViewCount:', data);
+                    console.error('API response for GET did not contain currentCount:', data);
+                    messageElement.textContent = 'Error: Count not found in API response.';
                 }
             } catch (error) {
                 // Handle any errors during the fetch or parsing
-                viewCountElement.textContent = 'Error loading count';
-                console.error('Failed to fetch page view count:', error);
+                console.error('Failed to fetch current count:', error);
+                messageElement.textContent = 'Network error. Could not fetch count.';
             }
         }
 
-        // Call the function when the page loads
-        document.addEventListener('DOMContentLoaded', fetchPageViewCount);
+        // Function to handle a click (POST request)
+        async function handleClick() {
+            clickButton.disabled = true; // Disable button to prevent rapid multiple clicks
+            messageElement.textContent = 'Registering click...';
+
+            try {
+                // Send a POST request to your /api/hello endpoint to increment the count
+                const response = await fetch('/api/hello', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                    // No body needed for a simple increment
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                // The POST response returns 'newCount'
+                if (data && typeof data.newCount !== 'undefined') {
+                    updateDisplay(data.newCount);
+                    messageElement.textContent = data.message || 'Click registered!';
+                } else {
+                    console.error('API response for POST did not contain newCount:', data);
+                    messageElement.textContent = 'Error registering click.';
+                }
+            } catch (error) {
+                console.error('Failed to register click:', error);
+                messageElement.textContent = 'Error: Could not register click.';
+            } finally {
+                clickButton.disabled = false; // Re-enable button
+                // Clear message after a short delay
+                setTimeout(() => { messageElement.textContent = ''; }, 2000); // Clear message after 2 seconds
+            }
+        }
+
+        // Event listener for the button click
+        clickButton.addEventListener('click', handleClick);
+
+        // Initial fetch when the page loads
+        document.addEventListener('DOMContentLoaded', fetchCurrentCount);
+
+        // Polling: Fetch the latest count every 1 second (1000 ms)
+        setInterval(fetchCurrentCount, 1000);
     </script>
 </body>
 </html>

@@ -1,24 +1,5 @@
 {
-  "functions": {
-    "api/hello.js": {
-      "maxDuration": 10,
-      "memory": 128
-    }
-  },
-  "routes": [
-    {
-      "src": "/api/hello",
-      "methods": ["GET", "POST"],
-      "dest": "/api/hello.js",
-      "headers": {
-        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
-        "Pragma": "no-cache",
-        "Expires": "0"
-      },
-      "rateLimit": {
-        "window": "10s",
-        "maxRequests": 10
-      }
-    }
+  "rewrites": [
+    { "source": "/", "destination": "/public/index.html" }
   ]
 }

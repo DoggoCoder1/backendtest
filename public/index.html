@@ -19,18 +19,13 @@
 <script>
   const viewCount = document.getElementById('viewCount');
   const onlineCount = document.getElementById('onlineCount');
-  if (!localStorage.getItem("yourClicks")) {
-    localStorage.setItem("yourClicks", 0);
-  }
   async function fetchStats() {
-    
     try {
       
       const res = await fetch('/api/hello');
       const data = await res.json();
       viewCount.textContent = `Clicks: ${data.pageViewCount ?? 'N/A'}`;
       onlineCount.textContent = `Online Users: ${data.onlineUsers ?? 'N/A'}`;
-      document.getElementById("yourClicks").innerHTML = localStorage.getItem("yourClicks");
     } catch {
       onlineCount.textContent = 'Failed to fetch stats';
     }
@@ -38,7 +33,6 @@
 
 async function incrementCount() {
   clickBtn.disabled = true;
-  localStorage.setItem("yourClicks", Number(localStorage.getItem("yourClicks")) + 1);
   try {
     const res = await fetch('/api/hello', {
       method: 'POST',

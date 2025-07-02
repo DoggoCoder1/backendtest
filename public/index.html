@@ -4,8 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>wowdog clicker</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -14,13 +12,14 @@
   <h2 id="onlineCount">-</h2>
   <button id="clickButton">Click</button>
   <button id="toggleDarkMode">Theme</button>
-  
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
 <script>
   const viewCount = document.getElementById('viewCount');
   const onlineCount = document.getElementById('onlineCount');
   const clickBtn = document.getElementById('clickButton');
-
+  const audio = new Audio('wdgi.wav');
+  audio.play();
   async function fetchStats() {
     try {
       
@@ -73,14 +72,13 @@ darkModeBtn.onclick = () => {
 };
 anime.timeline()
   .add({
-    targets: 'h1, h2, #clickButton, #toggleDarkMode, p',
+    targets: 'h1, h2, #clickButton, #toggleDarkMode',
     opacity: [0, 1],
     translateY: [30, 0],
     easing: 'easeOutQuad',
     duration: 800,
     delay: anime.stagger(100)
 });
-
 
 </script>
 

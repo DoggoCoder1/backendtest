@@ -21,7 +21,7 @@ export default async function handler(req, res) {
     `, [ip, now]);
 
     // Count active users in last 30 seconds
-    const activeCutoff = new Date(Date.now() - 30_000);
+    const activeCutoff = new Date(Date.now() - 10_000);
     const result = await client.query(`
       SELECT COUNT(*) AS online FROM online_users
       WHERE last_seen > $1

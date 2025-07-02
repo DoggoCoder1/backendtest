@@ -2,8 +2,8 @@
 :root {
   --bg-color: #f9f9f9;
   --text-color: #222;
-  --button-bg: #2563eb;
-  --button-hover: #1e40af;
+  --button-bg: #1bc581;
+  --button-hover: hsl(156, 64%, 36%);
   --goal-bg: #b3b3b3;
 }
 /* Basic styles for body and headings */
@@ -69,8 +69,8 @@ button:hover {
 body.dark {
   --bg-color: #121212;
   --text-color: #e5e5e5;
-  --button-bg: #3b82f6;
-  --button-hover: #1d4ed8;
+  --button-bg: #20ffa6;
+  --button-hover: hsl(156, 73%, 53%);
   --goal-bg: #272727;
 }
 #goalBarContainer {
@@ -105,5 +105,3 @@ body.dark {
 #goalText {
   z-index: 1;
 }
-
-

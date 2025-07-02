@@ -13,54 +13,32 @@
   <h1 id="viewCount">Loading...</h1>
   <button id="clickButton">Click</button>
   <p>this incredible website was brought to you by wowdog15 and vercel.com</p>
-  <p>duckie dont spam this :p</p>
-<script>
-  const viewCount = document.getElementById('viewCount');
-  const clickBtn = document.getElementById('clickButton');
-  const leaderboardElement = document.getElementById('leaderboard');
+  <p>duckie dont spam this :q</p>
+  <script>
+    const viewCount = document.getElementById('viewCount');
+    const clickBtn = document.getElementById('clickButton');
 
-  async function fetchCount() {
-    try {
-      const res = await fetch('/api/hello');
-      const data = await res.json();
-      viewCount.textContent = `Clicks: ${data.pageViewCount ?? 'N/A'}`;
-      renderLeaderboard(data.leaderboard);
-    } catch {
-      viewCount.textContent = 'Error loading count';
+    async function fetchCount() {
+      try {
+        const res = await fetch('/api/hello');
+        const data = await res.json();
+        viewCount.textContent = `Clicks: ${data.pageViewCount ?? 'N/A'}`;
+      } catch {}
     }
-  }
 
-  async function incrementCount() {
-    clickBtn.disabled = true;
-    try {
-      const res = await fetch('/api/hello', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      const data = await res.json();
-      viewCount.textContent = `Clicks: ${data.newCount ?? 'N/A'}`;
-      // Re-fetch leaderboard after click
-      fetchCount();
-    } catch {
-      viewCount.textContent = 'Click failed';
+    async function incrementCount() {
+      clickBtn.disabled = true;
+      try {
+        const res = await fetch('/api/hello', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+        const data = await res.json();
+        viewCount.textContent = `Clicks: ${data.newCount ?? 'N/A'}`;
+      } catch {}
+      clickBtn.disabled = false;
     }
-    clickBtn.disabled = false;
-  }
 
-  function renderLeaderboard(data) {
-    leaderboardElement.innerHTML = '';
-    if (!Array.isArray(data)) return;
-    data.forEach(entry => {
-      const li = document.createElement('li');
-      li.textContent = `${entry.country_code}: ${entry.click_count}`;
-      leaderboardElement.appendChild(li);
-    });
-  }
-
-  clickBtn.onclick = incrementCount;
-  window.onload = fetchCount;
-  setInterval(fetchCount, 500);
-</script>
-  
+    clickBtn.onclick = incrementCount;
+    window.onload = fetchCount;
+    setInterval(fetchCount, 1000);
+  </script>
 </body>
 </html>

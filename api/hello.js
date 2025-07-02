@@ -6,57 +6,49 @@ const pool = new Pool({
 });
 
 export default async function handler(req, res) {
+  const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress;
   let client;
 
   try {
     client = await pool.connect();
-
-    // Check maintenance mode flag from DB
-    const maintenanceRes = await client.query(
-      "SELECT value FROM settings WHERE key = 'maintenance_mode'"
-    );
-    const maintenance = maintenanceRes.rows[0]?.value === 'true';
-
-    if (maintenance) {
-      return res.status(503).json({ message: 'Maintenance' });
-    }
-
-    const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress;
     const now = new Date();
 
-    if (req.method === 'POST') {
-      // Increment page view count
-      await client.query(`
-        INSERT INTO page_views (page_path, view_count)
-        VALUES ($1, 1)
-        ON CONFLICT (page_path) DO UPDATE
-        SET view_count = page_views.view_count + 1
-      `, ['/api/hello']);
-    }
-
-    // Track online users
+    // Track online user on all requests
     await client.query(`
       INSERT INTO online_users (ip, last_seen)
       VALUES ($1, $2)
       ON CONFLICT (ip) DO UPDATE SET last_seen = EXCLUDED.last_seen
     `, [ip, now]);
 
-    // Count users active in last 30 seconds
-    const activeCutoff = new Date(Date.now() - 30_000); // 30 seconds ago
-    const onlineRes = await client.query(`
+    // Count active users in last 30 seconds
+    const activeCutoff = new Date(Date.now() - 30_000);
+    const result = await client.query(`
       SELECT COUNT(*) AS online FROM online_users
       WHERE last_seen > $1
     `, [activeCutoff]);
 
-    // Get current page view count
-    const viewRes = await client.query(`
-      SELECT view_count FROM page_views WHERE page_path = $1
-    `, ['/api/hello']);
+    const onlineUsers = Number(result.rows[0]?.online ?? 0);
 
-    res.status(200).json({
-      pageViewCount: viewRes.rows[0]?.view_count ?? 0,
-      onlineUsers: Number(onlineRes.rows[0].online)
-    });
+    if (req.method === 'POST') {
+      // Increment page view count
+      const update = await client.query(`
+        INSERT INTO page_views (page_path, view_count)
+        VALUES ($1, 1)
+        ON CONFLICT (page_path) DO UPDATE SET view_count = page_views.view_count + 1
+        RETURNING view_count
+      `, ['/api/hello']);
+
+      const newCount = update.rows[0]?.view_count ?? 0;
+      res.status(200).json({ newCount, onlineUsers });
+    } else {
+      // Get page view count
+      const viewResult = await client.query(`
+        SELECT view_count FROM page_views WHERE page_path = $1
+      `, ['/api/hello']);
+
+      const pageViewCount = viewResult.rows[0]?.view_count ?? 0;
+      res.status(200).json({ pageViewCount, onlineUsers });
+    }
 
   } catch (e) {
     console.error(e);

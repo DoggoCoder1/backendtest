@@ -9,56 +9,31 @@
 <body>
   <h1 id="viewCount">Loading...</h1>
   <button id="clickButton">Click</button>
-
   <script>
-    const viewCountElement = document.getElementById('viewCount');
-    const clickButton = document.getElementById('clickButton');
+    const viewCount = document.getElementById('viewCount');
+    const clickBtn = document.getElementById('clickButton');
 
-    function updateDisplay(count) {
-      viewCountElement.textContent = `Page Views: ${count}`;
-    }
-
-    async function fetchCurrentCount() {
+    async function fetchCount() {
       try {
-        const response = await fetch('/api/hello');
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        if (data && typeof data.pageViewCount !== 'undefined') {
-          updateDisplay(data.pageViewCount);
-        }
-      } catch (error) {
-        // No feedback
-      }
+        const res = await fetch('/api/hello');
+        const data = await res.json();
+        viewCount.textContent = `Page Views: ${data.pageViewCount ?? 'N/A'}`;
+      } catch {}
     }
 
-    async function handleClick() {
-      clickButton.disabled = true;
+    async function incrementCount() {
+      clickBtn.disabled = true;
       try {
-        const response = await fetch('/api/hello', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        if (data && typeof data.newCount !== 'undefined') {
-          updateDisplay(data.newCount);
-        }
-      } catch (error) {
-        console.log("something went wrong i dont fucking know what but something did :/" + error)
-      } finally {
-        clickButton.disabled = false;
-      }
+        const res = await fetch('/api/hello', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+        const data = await res.json();
+        viewCount.textContent = `Page Views: ${data.newCount ?? 'N/A'}`;
+      } catch {}
+      clickBtn.disabled = false;
     }
 
-    clickButton.addEventListener('click', handleClick);
-    document.addEventListener('DOMContentLoaded', fetchCurrentCount);
-    setInterval(fetchCurrentCount, 1000);
+    clickBtn.onclick = incrementCount;
+    window.onload = fetchCount;
+    setInterval(fetchCount, 1000);
   </script>
 </body>
 </html>

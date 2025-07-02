@@ -13,19 +13,24 @@
   <h2 id="onlineCount">-</h2>
   <button id="clickButton">Click</button>
   <button id="toggleDarkMode">Theme</button>
-  
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
 <script>
   const viewCount = document.getElementById('viewCount');
   const onlineCount = document.getElementById('onlineCount');
+  const clickBtn = document.getElementById('clickButton');
+  
+  if (!localStorage.getItem('yourClicks')) {
+    localStorage.setItem('yourClicks', 0);
+  }
+
   async function fetchStats() {
     try {
-      
       const res = await fetch('/api/hello');
       const data = await res.json();
       viewCount.textContent = `Clicks: ${data.pageViewCount ?? 'N/A'}`;
       onlineCount.textContent = `Online Users: ${data.onlineUsers ?? 'N/A'}`;
+      document.getElementById("yourClicks").innerHTML = `Your Clicks: ${localStorage.getItem('yourClicks')}`
     } catch {
       onlineCount.textContent = 'Failed to fetch stats';
     }

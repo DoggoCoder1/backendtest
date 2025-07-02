@@ -14,7 +14,6 @@
   <h2 id="onlineCount">Checking online users...</h2>
   <button id="clickButton">Click</button>
   <p>this incredible website was brought to you by wowdog15 and vercel.com</p>
-  <p>duckie dont spam this :q</p>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
 <script>
   const viewCount = document.getElementById('viewCount');
@@ -62,14 +61,6 @@ async function incrementCount() {
   });
   incrementCount();
 };
-viewCount.textContent = `Clicks: ${data.newCount}`;
-anime({
-  targets: viewCount,
-  translateY: [-10, 0],
-  opacity: [0, 1],
-  duration: 300,
-  easing: 'easeOutQuad'
-});
 </script>
 
 </body>

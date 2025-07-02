@@ -14,55 +14,53 @@
   <button id="clickButton">Click</button>
   <p>this incredible website was brought to you by wowdog15 and vercel.com</p>
   <p>duckie dont spam this :p</p>
-  <script>
-    const viewCount = document.getElementById('viewCount');
-    const clickBtn = document.getElementById('clickButton');
-
-    async function fetchCount() {
-      try {
-        const res = await fetch('/api/hello');
-        const data = await res.json();
-        viewCount.textContent = `Clicks: ${data.pageViewCount ?? 'N/A'}`;
-      } catch {}
-    }
-
-    async function incrementCount() {
-      clickBtn.disabled = true;
-      try {
-        const res = await fetch('/api/hello', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-        const data = await res.json();
-        viewCount.textContent = `Clicks: ${data.newCount ?? 'N/A'}`;
-      } catch {}
-      clickBtn.disabled = false;
-    }
-
-    clickBtn.onclick = incrementCount;
-    window.onload = fetchCount;
-    setInterval(fetchCount, 1000);
-  </script>
-  <ul id="leaderboard"></ul>
-
 <script>
-const leaderboardElement = document.getElementById('leaderboard');
+  const viewCount = document.getElementById('viewCount');
+  const clickBtn = document.getElementById('clickButton');
+  const leaderboardElement = document.getElementById('leaderboard');
 
-async function fetchCount() {
-  try {
-    const res = await fetch('/api/hello');
-    const data = await res.json();
-    viewCount.textContent = `Clicks: ${data.pageViewCount ?? 'N/A'}`;
-    renderLeaderboard(data.leaderboard);
-  } catch {}
-}
-
-function renderLeaderboard(data) {
-  leaderboardElement.innerHTML = '';
-  if (!data) return;
-  for (const row of data) {
-    const li = document.createElement('li');
-    li.textContent = `${row.country_code}: ${row.click_count}`;
-    leaderboardElement.appendChild(li);
+  async function fetchCount() {
+    try {
+      const res = await fetch('/api/hello');
+      const data = await res.json();
+      viewCount.textContent = `Clicks: ${data.pageViewCount ?? 'N/A'}`;
+      renderLeaderboard(data.leaderboard);
+    } catch {
+      viewCount.textContent = 'Error loading count';
+    }
   }
-}
+
+  async function incrementCount() {
+    clickBtn.disabled = true;
+    try {
+      const res = await fetch('/api/hello', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await res.json();
+      viewCount.textContent = `Clicks: ${data.newCount ?? 'N/A'}`;
+      // Re-fetch leaderboard after click
+      fetchCount();
+    } catch {
+      viewCount.textContent = 'Click failed';
+    }
+    clickBtn.disabled = false;
+  }
+
+  function renderLeaderboard(data) {
+    leaderboardElement.innerHTML = '';
+    if (!Array.isArray(data)) return;
+    data.forEach(entry => {
+      const li = document.createElement('li');
+      li.textContent = `${entry.country_code}: ${entry.click_count}`;
+      leaderboardElement.appendChild(li);
+    });
+  }
+
+  clickBtn.onclick = incrementCount;
+  window.onload = fetchCount;
+  setInterval(fetchCount, 500);
 </script>
+  
 </body>
 </html>

@@ -40,5 +40,29 @@
     window.onload = fetchCount;
     setInterval(fetchCount, 1000);
   </script>
+  <ul id="leaderboard"></ul>
+
+<script>
+const leaderboardElement = document.getElementById('leaderboard');
+
+async function fetchCount() {
+  try {
+    const res = await fetch('/api/hello');
+    const data = await res.json();
+    viewCount.textContent = `Clicks: ${data.pageViewCount ?? 'N/A'}`;
+    renderLeaderboard(data.leaderboard);
+  } catch {}
+}
+
+function renderLeaderboard(data) {
+  leaderboardElement.innerHTML = '';
+  if (!data) return;
+  for (const row of data) {
+    const li = document.createElement('li');
+    li.textContent = `${row.country_code}: ${row.click_count}`;
+    leaderboardElement.appendChild(li);
+  }
+}
+</script>
 </body>
 </html>

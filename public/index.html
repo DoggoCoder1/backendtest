@@ -25,7 +25,7 @@
       const res = await fetch('/api/hello');
       const data = await res.json();
       viewCount.textContent = `Clicks: ${data.pageViewCount ?? 'N/A'}`;
-      onlineCount.textContent = `Online Users: ${data.onlineUsers ?? 'N/A'}`;
+      onlineCount.textContent = `${data.onlineUsers ?? 'N/A'}`;
     } catch {
       onlineCount.textContent = 'Failed to fetch stats';
     }

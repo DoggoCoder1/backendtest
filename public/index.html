@@ -38,6 +38,7 @@
 
 async function incrementCount() {
   clickBtn.disabled = true;
+  localStorage.setItem('yourClicks', parseInt(localStorage.getItem('yourClicks')) + 1);
   try {
     const res = await fetch('/api/hello', {
       method: 'POST',

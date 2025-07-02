@@ -10,10 +10,11 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <h1 id="viewCount">Loading...</h1>
-  <h2 id="onlineCount">Checking online users...</h2>
+  <h1 id="viewCount">-</h1>
+  <h2 id="onlineCount">-</h2>
   <button id="clickButton">Click</button>
-  <p>this incredible website was brought to you by wowdog15 and vercel.com</p>
+  <button id="toggleDarkMode">Theme</button>
+  
 <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
 <script>
   const viewCount = document.getElementById('viewCount');
@@ -47,20 +48,40 @@ async function incrementCount() {
   }
   clickBtn.disabled = false;
 }
+clickBtn.onclick = incrementCount;
+window.onload = fetchStats;
+setInterval(fetchStats, 1000);
+const darkModeBtn = document.getElementById('toggleDarkMode');
 
+if (localStorage.getItem('theme') === 'dark') {
+  document.body.classList.add('dark');
+}
 
-  clickBtn.onclick = incrementCount;
-  window.onload = fetchStats;
-  setInterval(fetchStats, 1000); // update every 4 seconds
-  clickBtn.onclick = () => {
+darkModeBtn.onclick = () => {
+  document.body.classList.toggle('dark');
+  const isDark = document.body.classList.contains('dark');
+  localStorage.setItem('theme', isDark ? 'dark' : 'light');
+
   anime({
-    targets: clickBtn,
-    scale: [1, 1.2, 1],
-    duration: 200,
+    targets: 'body',
+    opacity: [0, 1],
+    scale: [0.9, 1],
+    rotateZ: [-4, 0],
+    duration: 1200,
     easing: 'easeInOutQuad'
   });
-  incrementCount();
 };
+anime.timeline()
+  .add({
+    targets: 'h1, h2, #clickButton, #toggleDarkMode, p',
+    opacity: [0, 1],
+    translateY: [30, 0],
+    easing: 'easeOutQuad',
+    duration: 800,
+    delay: anime.stagger(100)
+});
+
+
 </script>
 
 </body>

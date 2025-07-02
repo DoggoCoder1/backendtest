@@ -4,37 +4,64 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>wowdog clicker</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
   <h1 id="viewCount">Loading...</h1>
   <button id="clickButton">Click</button>
+  <p id="cpsCounter">Clicks per second: 0</p>
   <p>this incredible website was brought to you by wowdog15 and vercel.com</p>
   <script>
-    const viewCount = document.getElementById('viewCount');
-    const clickBtn = document.getElementById('clickButton');
+    const viewCountElement = document.getElementById('viewCount');
+    const clickButton = document.getElementById('clickButton');
+    const cpsCounterElement = document.getElementById('cpsCounter');
+
+    let clickTimestamps = [];
 
     async function fetchCount() {
       try {
         const res = await fetch('/api/hello');
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
         const data = await res.json();
-        viewCount.textContent = `Clicks: ${data.pageViewCount ?? 'N/A'}`;
-      } catch {}
+        viewCountElement.textContent = `Total Clicks: ${data.pageViewCount ?? 'N/A'}`;
+      } catch (error) {
+        console.error("Error fetching total count:", error);
+        viewCountElement.textContent = `Total Clicks: Error`;
+      }
     }
 
     async function incrementCount() {
-      clickBtn.disabled = true;
+      clickButton.disabled = true;
+      clickTimestamps.push(Date.now());
       try {
         const res = await fetch('/api/hello', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
         const data = await res.json();
-        viewCount.textContent = `Clicks: ${data.newCount ?? 'N/A'}`;
-      } catch {}
-      clickBtn.disabled = false;
+        viewCountElement.textContent = `Total Clicks: ${data.newCount ?? 'N/A'}`;
+      } catch (error) {
+        console.error("Error incrementing count:", error);
+      } finally {
+        clickButton.disabled = false;
+      }
     }
 
-    clickBtn.onclick = incrementCount;
+    function calculateAndDisplayCPS() {
+      const now = Date.now();
+      clickTimestamps = clickTimestamps.filter(timestamp => now - timestamp < 1000);
+      const cps = clickTimestamps.length;
+      cpsCounterElement.textContent = `Clicks per second: ${cps}`;
+    }
+
+    clickButton.onclick = incrementCount;
     window.onload = fetchCount;
     setInterval(fetchCount, 1000);
+    setInterval(calculateAndDisplayCPS, 100);
   </script>
 </body>
 </html>

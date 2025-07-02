@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>wowdog clicker</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
@@ -13,79 +13,65 @@
   <h2 id="onlineCount">-</h2>
   <button id="clickButton">Click</button>
   <button id="toggleDarkMode">Theme</button>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+  <script>
+    const viewCount = document.getElementById('viewCount');
+    const onlineCount = document.getElementById('onlineCount');
+    const clickBtn = document.getElementById('clickButton');
+    const yourClicks = document.getElementById('yourClicks');
+    const darkModeBtn = document.getElementById('toggleDarkMode');
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
-<script>
-  const viewCount = document.getElementById('viewCount');
-  const onlineCount = document.getElementById('onlineCount');
-  const clickBtn = document.getElementById('clickButton');
-  
-  if (!localStorage.getItem('yourClicks')) {
-    localStorage.setItem('yourClicks', 0);
-  }
+    if (!localStorage.yourClicks) localStorage.yourClicks = 0;
+    if (localStorage.theme === 'dark') document.body.classList.add('dark');
 
-  async function fetchStats() {
-    try {
-      const res = await fetch('/api/hello');
-      const data = await res.json();
-      viewCount.textContent = `Clicks: ${data.pageViewCount ?? 'N/A'}`;
-      onlineCount.textContent = `Online Users: ${data.onlineUsers ?? 'N/A'}`;
-      document.getElementById("yourClicks").innerHTML = `Your Clicks: ${localStorage.getItem('yourClicks')}`
-    } catch {
-      onlineCount.textContent = 'Failed to fetch stats';
+    function updateLocalClicks() {
+      localStorage.yourClicks = +localStorage.yourClicks + 1;
+      yourClicks.textContent = `Your Clicks: ${localStorage.yourClicks}`;
     }
-  }
 
-async function incrementCount() {
-  clickBtn.disabled = true;
-  localStorage.setItem('yourClicks', parseInt(localStorage.getItem('yourClicks')) + 1);
-  try {
-    const res = await fetch('/api/hello', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
+    async function fetchStats() {
+      try {
+        const res = await fetch('/api/hello');
+        const data = await res.json();
+        viewCount.textContent = `Clicks: ${data.pageViewCount ?? 'N/A'}`;
+        onlineCount.textContent = `Online Users: ${data.onlineUsers ?? 'N/A'}`;
+        yourClicks.textContent = `Your Clicks: ${localStorage.yourClicks}`;
+      } catch {
+        onlineCount.textContent = 'Failed to fetch stats';
+      }
+    }
+
+    async function incrementCount() {
+      clickBtn.disabled = true;
+      updateLocalClicks();
+      try {
+        const res = await fetch('/api/hello', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+        const data = await res.json();
+        viewCount.textContent = `Clicks: ${data.newCount ?? 'N/A'}`;
+      } catch {
+        viewCount.textContent = 'Error';
+      }
+      clickBtn.disabled = false;
+    }
+
+    clickBtn.onclick = incrementCount;
+    darkModeBtn.onclick = () => {
+      document.body.classList.toggle('dark');
+      localStorage.theme = document.body.classList.contains('dark') ? 'dark' : 'light';
+      anime({ targets: 'body', opacity: [0, 1], scale: [0.9, 1], rotateZ: [-4, 0], duration: 1200, easing: 'easeInOutQuad' });
+    };
+
+    anime.timeline().add({
+      targets: 'h1, h2, #clickButton, #toggleDarkMode',
+      opacity: [0, 1],
+      translateY: [30, 0],
+      easing: 'easeOutQuad',
+      duration: 800,
+      delay: anime.stagger(100)
     });
 
-    const data = await res.json();
-    viewCount.textContent = `Clicks: ${data.newCount ?? 'N/A'}`;
-  } catch {
-    viewCount.textContent = 'Error';
-  }
-  clickBtn.disabled = false;
-}
-clickBtn.onclick = incrementCount;
-window.onload = fetchStats;
-setInterval(fetchStats, 1000);
-const darkModeBtn = document.getElementById('toggleDarkMode');
-
-if (localStorage.getItem('theme') === 'dark') {
-  document.body.classList.add('dark');
-}
-
-darkModeBtn.onclick = () => {
-  document.body.classList.toggle('dark');
-  const isDark = document.body.classList.contains('dark');
-  localStorage.setItem('theme', isDark ? 'dark' : 'light');
-
-  anime({
-    targets: 'body',
-    opacity: [0, 1],
-    scale: [0.9, 1],
-    rotateZ: [-4, 0],
-    duration: 1200,
-    easing: 'easeInOutQuad'
-  });
-};
-anime.timeline()
-  .add({
-    targets: 'h1, h2, #clickButton, #toggleDarkMode',
-    opacity: [0, 1],
-    translateY: [30, 0],
-    easing: 'easeOutQuad',
-    duration: 800,
-    delay: anime.stagger(100)
-});
-
-</script>
-
+    window.onload = fetchStats;
+    setInterval(fetchStats, 1000);
+  </script>
 </body>
 </html>

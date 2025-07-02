@@ -10,46 +10,19 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div id="maintenance" style="
-    display:none;
-    position:fixed;
-    inset:0;
-    background:#111;
-    color:#fff;
-    font-size:2rem;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    z-index:1000;
-  ">🚧 Site Under Maintenance 🚧<br><p>Please come back later.</p></div>
-
   <h1 id="viewCount">Loading...</h1>
   <h2 id="onlineCount">Checking online users...</h2>
   <button id="clickButton">Click</button>
   <p>this incredible website was brought to you by wowdog15 and vercel.com</p>
   <p>duckie dont spam this :q</p>
-
 <script>
   const viewCount = document.getElementById('viewCount');
   const onlineCount = document.getElementById('onlineCount');
   const clickBtn = document.getElementById('clickButton');
-  const maintenance = document.getElementById('maintenance');
 
   async function fetchStats() {
     try {
       const res = await fetch('/api/hello');
-      if (res.status === 503) {
-        maintenance.style.display = 'flex';
-        viewCount.style.display = 'none';
-        onlineCount.style.display = 'none';
-        clickBtn.disabled = true;
-        return;
-      }
-      maintenance.style.display = 'none';
-      viewCount.style.display = 'block';
-      onlineCount.style.display = 'block';
-      clickBtn.disabled = false;
-
       const data = await res.json();
       viewCount.textContent = `Clicks: ${data.pageViewCount ?? 'N/A'}`;
       onlineCount.textContent = `Online Users: ${data.onlineUsers ?? 'N/A'}`;
@@ -65,12 +38,6 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
-      if (res.status === 503) {
-        maintenance.style.display = 'flex';
-        viewCount.style.display = 'none';
-        onlineCount.style.display = 'none';
-        return;
-      }
       const data = await res.json();
       viewCount.textContent = `Clicks: ${data.newCount ?? 'N/A'}`;
     } catch {}
@@ -79,7 +46,8 @@
 
   clickBtn.onclick = incrementCount;
   window.onload = fetchStats;
-  setInterval(fetchStats, 4000); // update every 4 seconds
+  setInterval(fetchStats, 1000); // update every 4 seconds
 </script>
+
 </body>
 </html>

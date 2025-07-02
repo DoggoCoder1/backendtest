@@ -10,6 +10,22 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <div id="maintenanceOverlay" style="
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  color: white;
+  font-size: 2rem;
+  font-weight: bold;
+  text-align: center;
+  padding-top: 20vh;
+  z-index: 9999;
+  user-select: none;
+">
+  🚧 Site Under Maintenance 🚧<br>
+  Please check back soon.
+</div>
   <h1 id="viewCount">Loading...</h1>
   <h2 id="onlineCount">Checking online users...</h2>
   <button id="clickButton">Click</button>
@@ -19,6 +35,15 @@
   const viewCount = document.getElementById('viewCount');
   const onlineCount = document.getElementById('onlineCount');
   const clickBtn = document.getElementById('clickButton');
+  const maintenanceOverlay = document.getElementById('maintenanceOverlay');
+
+  function showMaintenance() {
+    maintenanceOverlay.style.display = 'block';
+  }
+
+  function hideMaintenance() {
+    maintenanceOverlay.style.display = 'none';
+  }
 
   async function fetchStats() {
     try {

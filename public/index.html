@@ -11,34 +11,43 @@
 </head>
 <body>
   <h1 id="viewCount">Loading...</h1>
+  <h2 id="onlineCount">Checking online users...</h2>
   <button id="clickButton">Click</button>
   <p>this incredible website was brought to you by wowdog15 and vercel.com</p>
   <p>duckie dont spam this :q</p>
-  <script>
-    const viewCount = document.getElementById('viewCount');
-    const clickBtn = document.getElementById('clickButton');
+<script>
+  const viewCount = document.getElementById('viewCount');
+  const onlineCount = document.getElementById('onlineCount');
+  const clickBtn = document.getElementById('clickButton');
 
-    async function fetchCount() {
-      try {
-        const res = await fetch('/api/hello');
-        const data = await res.json();
-        viewCount.textContent = `Clicks: ${data.pageViewCount ?? 'N/A'}`;
-      } catch {}
+  async function fetchStats() {
+    try {
+      const res = await fetch('/api/hello');
+      const data = await res.json();
+      viewCount.textContent = `Clicks: ${data.pageViewCount ?? 'N/A'}`;
+      onlineCount.textContent = `Online Users: ${data.onlineUsers ?? 'N/A'}`;
+    } catch {
+      onlineCount.textContent = 'Failed to fetch stats';
     }
+  }
 
-    async function incrementCount() {
-      clickBtn.disabled = true;
-      try {
-        const res = await fetch('/api/hello', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-        const data = await res.json();
-        viewCount.textContent = `Clicks: ${data.newCount ?? 'N/A'}`;
-      } catch {}
-      clickBtn.disabled = false;
-    }
+  async function incrementCount() {
+    clickBtn.disabled = true;
+    try {
+      const res = await fetch('/api/hello', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await res.json();
+      viewCount.textContent = `Clicks: ${data.newCount ?? 'N/A'}`;
+    } catch {}
+    clickBtn.disabled = false;
+  }
 
-    clickBtn.onclick = incrementCount;
-    window.onload = fetchCount;
-    setInterval(fetchCount, 1000);
-  </script>
+  clickBtn.onclick = incrementCount;
+  window.onload = fetchStats;
+  setInterval(fetchStats, 4000); // update every 4 seconds
+</script>
+
 </body>
 </html>

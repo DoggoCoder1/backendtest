@@ -47,12 +47,7 @@
 
   async function fetchStats() {
     try {
-      if (res.status === 503) {
-      showMaintenance();
-      return;
-    } else {
-      hideMaintenance();
-    }
+      
       const res = await fetch('/api/hello');
       const data = await res.json();
       viewCount.textContent = `Clicks: ${data.pageViewCount ?? 'N/A'}`;

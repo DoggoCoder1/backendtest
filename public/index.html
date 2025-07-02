@@ -34,11 +34,11 @@
                 // Parse the JSON response
                 const data = await response.json();
 
-                // Check if currentCount exists in the response (from GET request)
-                if (data && typeof data.currentCount !== 'undefined') {
-                    updateDisplay(data.currentCount);
+                // Check if pageViewCount exists in the response (from GET request)
+                if (data && typeof data.pageViewCount !== 'undefined') { // Changed to pageViewCount
+                    updateDisplay(data.pageViewCount); // Changed to pageViewCount
                 } else {
-                    console.error('API response for GET did not contain currentCount:', data);
+                    console.error('API response for GET did not contain pageViewCount:', data);
                     messageElement.textContent = 'Error: Count not found in API response.';
                 }
             } catch (error) {

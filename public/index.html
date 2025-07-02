@@ -3,45 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Page View Counter</title>
+    <title>Worldwide Clicker</title>
 </head>
 <body>
-    <h1 id="viewCount">Loading...</h1>
+    <h1>Global Click Count</h1>
+    <p>Click the button below to add to the worldwide tally!</p>
+
+    <!-- The count display is now a plain button -->
+    <button id="clickCountDisplay">
+        0
+    </button>
+
+    <p id="message"></p>
 
     <script>
-        // Function to fetch the page view count from the API
-        async function fetchPageViewCount() {
-            const viewCountElement = document.getElementById('viewCount');
-            viewCountElement.textContent = 'Loading...'; // Show loading state
+        const clickCountDisplay = document.getElementById('clickCountDisplay'); // Now refers to the button
+        const messageElement = document.getElementById('message');
+
+        // Function to update the display with the latest count
+        function updateDisplay(count) {
+            clickCountDisplay.textContent = count;
+        }
+
+        // Function to fetch the current count (GET request)
+        async function fetchCurrentCount() {
+            try {
+                const response = await fetch('/api/hello');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                if (typeof data.currentCount !== 'undefined') {
+                    updateDisplay(data.currentCount);
+                } else {
+                    console.error('API response for GET did not contain currentCount:', data);
+                    messageElement.textContent = 'Error fetching count.';
+                }
+            } catch (error) {
+                console.error('Failed to fetch current count:', error);
+                messageElement.textContent = 'Network error. Could not fetch count.';
+            }
+        }
+
+        // Function to handle a click (POST request)
+        async function handleClick() {
+            clickCountDisplay.disabled = true; // Disable the button to prevent rapid multiple clicks
+            messageElement.textContent = 'Registering click...';
 
             try {
-                // Fetch data from your /api/hello endpoint
-                const response = await fetch('/api/hello');
+                const response = await fetch('/api/hello', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                    // No body needed for a simple increment
+                });
 
-                // Check if the response was successful
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                // Parse the JSON response
                 const data = await response.json();
-
-                // Check if pageViewCount exists in the response
-                if (data && typeof data.pageViewCount !== 'undefined') {
-                    viewCountElement.textContent = `Page Views: ${data.pageViewCount}`; // Updated text for plain H1
+                if (typeof data.newCount !== 'undefined') {
+                    updateDisplay(data.newCount);
+                    messageElement.textContent = data.message || 'Click registered!';
                 } else {
-                    viewCountElement.textContent = 'Error: Count not found';
-                    console.error('API response did not contain pageViewCount:', data);
+                    console.error('API response for POST did not contain newCount:', data);
+                    messageElement.textContent = 'Error registering click.';
                 }
             } catch (error) {
-                // Handle any errors during the fetch or parsing
-                viewCountElement.textContent = 'Error loading count';
-                console.error('Failed to fetch page view count:', error);
+                console.error('Failed to register click:', error);
+                messageElement.textContent = 'Error: Could not register click.';
+            } finally {
+                clickCountDisplay.disabled = false; // Re-enable the button
+                // Clear message after a short delay
+                setTimeout(() => { messageElement.textContent = ''; }, 3000);
             }
         }
 
-        // Call the function when the page loads
-        document.addEventListener('DOMContentLoaded', fetchPageViewCount);
+        // Event listener for the button click (now attached to clickCountDisplay)
+        clickCountDisplay.addEventListener('click', handleClick);
+
+        // Initial fetch when the page loads
+        document.addEventListener('DOMContentLoaded', fetchCurrentCount);
+
+        // Polling: Fetch the latest count every 3 seconds
+        setInterval(fetchCurrentCount, 3000); // Adjust interval as needed
     </script>
 </body>
 </html>

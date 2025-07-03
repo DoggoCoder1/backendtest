@@ -3,49 +3,192 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>wowdog clicker</title>
+  <title>Token Chat</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div>
-  <input id="username" placeholder="Your name">
-  <input id="messageInput" placeholder="Type a message">
-  <button onclick="sendMessage()">Send</button>
-</div>
-<ul id="chatBox"></ul>
+  <div id="authSection">
+    <h2>Register</h2>
+    <input id="registerUsername" placeholder="Username" type="text">
+    <input id="registerPassword" placeholder="Password" type="password">
+    <button onclick="registerUser()">Register</button>
+    <p id="registerMessage"></p>
+
+    <h2>Login</h2>
+    <input id="loginUsername" placeholder="Username" type="text">
+    <input id="loginPassword" placeholder="Password" type="password">
+    <button onclick="loginUser()">Login</button>
+    <p id="loginMessage"></p>
+  </div>
+
+  <div id="chatSection" style="display:none;">
+    <p>Logged in as: <strong id="loggedInUsername"></strong></p>
+    <div>
+      <input id="messageInput" placeholder="Type a message">
+      <button onclick="sendMessage()">Send</button>
+      <button onclick="logout()">Logout</button>
+    </div>
+    <ul id="chatBox"></ul>
+  </div>
 
 <script>
+  let token = localStorage.getItem('chatToken'); // Get token from local storage
+  let currentUsername = localStorage.getItem('chatUsername'); // Get username from local storage
   const chatBox = document.getElementById('chatBox');
+  const authSection = document.getElementById('authSection');
+  const chatSection = document.getElementById('chatSection');
+  const loggedInUsernameDisplay = document.getElementById('loggedInUsername');
 
+  // Function to show/hide sections based on token presence
+  function updateUI() {
+    if (token && currentUsername) {
+      authSection.style.display = 'none';
+      chatSection.style.display = 'block';
+      loggedInUsernameDisplay.textContent = currentUsername;
+      fetchMessages();
+    } else {
+      authSection.style.display = 'block';
+      chatSection.style.display = 'none';
+    }
+  }
+
+  // --- Registration Function ---
+  async function registerUser() {
+    const username = document.getElementById('registerUsername').value;
+    const password = document.getElementById('registerPassword').value;
+    const registerMessage = document.getElementById('registerMessage');
+
+    try {
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      registerMessage.textContent = data.message || data.error;
+      registerMessage.style.color = res.ok ? 'green' : 'red';
+    } catch (error) {
+      console.error('Registration error:', error);
+      registerMessage.textContent = 'An error occurred during registration.';
+      registerMessage.style.color = 'red';
+    }
+  }
+
+  // --- Login Function ---
+  async function loginUser() {
+    const username = document.getElementById('loginUsername').value;
+    const password = document.getElementById('loginPassword').value;
+    const loginMessage = document.getElementById('loginMessage');
+
+    try {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        token = data.token;
+        currentUsername = data.username;
+        localStorage.setItem('chatToken', token); // Store token
+        localStorage.setItem('chatUsername', currentUsername); // Store username
+        loginMessage.textContent = 'Login successful!';
+        loginMessage.style.color = 'green';
+        document.getElementById('loginPassword').value = ''; // Clear password field
+        updateUI(); // Update UI after successful login
+      } else {
+        loginMessage.textContent = data.error || 'Login failed.';
+        loginMessage.style.color = 'red';
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      loginMessage.textContent = 'An error occurred during login.';
+      loginMessage.style.color = 'red';
+    }
+  }
+
+  // --- Logout Function ---
+  function logout() {
+    token = null;
+    currentUsername = null;
+    localStorage.removeItem('chatToken');
+    localStorage.removeItem('chatUsername');
+    updateUI();
+    chatBox.innerHTML = ''; // Clear chat messages
+  }
+
+  // --- Fetch Messages Function (now with token) ---
   async function fetchMessages() {
-    const res = await fetch('/api/chat');
-    const data = await res.json();
-    chatBox.innerHTML = '';
-    data.messages.reverse().forEach(msg => {
-      const li = document.createElement('li');
-      li.textContent = `[${msg.username}]: ${msg.content}`;
-      chatBox.appendChild(li);
-    });
+    if (!token) return; // Don't fetch if no token
+
+    try {
+      const res = await fetch('/api/chat', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        chatBox.innerHTML = '';
+        data.messages.reverse().forEach(msg => {
+          const li = document.createElement('li');
+          li.textContent = `[${msg.username}]: ${msg.content}`;
+          chatBox.appendChild(li);
+        });
+      } else if (res.status === 401 || res.status === 403) {
+        // Token expired or invalid, force logout
+        console.warn('Token invalid or expired. Logging out.');
+        logout();
+      } else {
+        console.error('Failed to fetch messages:', res.statusText);
+      }
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+    }
   }
 
+  // --- Send Message Function (now with token) ---
   async function sendMessage() {
-    const username = document.getElementById('username').value;
+    if (!token) {
+      alert('Please log in to send messages.');
+      return;
+    }
+
     const content = document.getElementById('messageInput').value;
-    if (!username || !content) return;
+    if (!content) return;
 
-    await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, content })
-    });
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ content }) // No need to send username from client, it's in the token
+      });
 
-    document.getElementById('messageInput').value = '';
-    fetchMessages();
+      if (res.ok) {
+        document.getElementById('messageInput').value = '';
+        fetchMessages();
+      } else if (res.status === 401 || res.status === 403) {
+        console.warn('Token invalid or expired. Logging out.');
+        logout();
+        alert('Your session expired. Please log in again.');
+      } else {
+        const errorData = await res.json();
+        alert(`Failed to send message: ${errorData.error || res.statusText}`);
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      alert('An error occurred while sending the message.');
+    }
   }
 
-  setInterval(fetchMessages, 1000); // Poll every 1 second
-  fetchMessages(); // Initial load
+  // Initial UI update and message fetch if already logged in
+  updateUI();
+  if (token && currentUsername) {
+    setInterval(fetchMessages, 1000);
+  }
 </script>
 </body>
 </html>

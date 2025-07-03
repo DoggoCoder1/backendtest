@@ -3,9 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Token Chat</title>
+  <title>Token Login Chat</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
+  <!-- Removed Tailwind CSS link -->
+  <!-- Removed custom styles.css link -->
 </head>
 <body>
   <div id="authSection">
@@ -33,31 +34,55 @@
   </div>
 
 <script>
-  let token = localStorage.getItem('chatToken'); // Get token from local storage
-  let currentUsername = localStorage.getItem('chatUsername'); // Get username from local storage
+  // Retrieve token and username from localStorage on page load
+  let token = localStorage.getItem('chatToken');
+  let currentUsername = localStorage.getItem('chatUsername');
+  // Removed currentRole as styling is no longer desired
+
+  // Get references to DOM elements
   const chatBox = document.getElementById('chatBox');
   const authSection = document.getElementById('authSection');
   const chatSection = document.getElementById('chatSection');
   const loggedInUsernameDisplay = document.getElementById('loggedInUsername');
+  const registerMessage = document.getElementById('registerMessage');
+  const loginMessage = document.getElementById('loginMessage');
 
-  // Function to show/hide sections based on token presence
+  // Function to update the UI based on authentication status
   function updateUI() {
     if (token && currentUsername) {
       authSection.style.display = 'none';
       chatSection.style.display = 'block';
       loggedInUsernameDisplay.textContent = currentUsername;
-      fetchMessages();
+
+      // Removed admin styling logic from logged-in username
+
+      fetchMessages(); // Fetch messages immediately after login/UI update
+      // Start polling for new messages only if not already started
+      if (!window.messageFetchInterval) {
+        window.messageFetchInterval = setInterval(fetchMessages, 1000);
+      }
     } else {
       authSection.style.display = 'block';
       chatSection.style.display = 'none';
+      // Stop polling for messages if logged out
+      if (window.messageFetchInterval) {
+        clearInterval(window.messageFetchInterval);
+        window.messageFetchInterval = null;
+      }
+      chatBox.innerHTML = ''; // Clear chat messages
     }
   }
 
-  // --- Registration Function ---
+  // --- User Registration Function ---
   async function registerUser() {
-    const username = document.getElementById('registerUsername').value;
+    const username = document.getElementById('registerUsername').value.trim();
     const password = document.getElementById('registerPassword').value;
-    const registerMessage = document.getElementById('registerMessage');
+
+    if (!username || !password) {
+      registerMessage.textContent = 'Please enter both username and password.';
+      registerMessage.style.color = 'red';
+      return;
+    }
 
     try {
       const res = await fetch('/api/register', {
@@ -66,20 +91,33 @@
         body: JSON.stringify({ username, password })
       });
       const data = await res.json();
-      registerMessage.textContent = data.message || data.error;
-      registerMessage.style.color = res.ok ? 'green' : 'red';
+
+      if (res.ok) {
+        registerMessage.textContent = data.message;
+        registerMessage.style.color = 'green';
+        document.getElementById('registerUsername').value = '';
+        document.getElementById('registerPassword').value = '';
+      } else {
+        registerMessage.textContent = data.error || 'Registration failed.';
+        registerMessage.style.color = 'red';
+      }
     } catch (error) {
       console.error('Registration error:', error);
-      registerMessage.textContent = 'An error occurred during registration.';
+      registerMessage.textContent = 'An unexpected error occurred during registration.';
       registerMessage.style.color = 'red';
     }
   }
 
-  // --- Login Function ---
+  // --- User Login Function ---
   async function loginUser() {
-    const username = document.getElementById('loginUsername').value;
+    const username = document.getElementById('loginUsername').value.trim();
     const password = document.getElementById('loginPassword').value;
-    const loginMessage = document.getElementById('loginMessage');
+
+    if (!username || !password) {
+      loginMessage.textContent = 'Please enter both username and password.';
+      loginMessage.style.color = 'red';
+      return;
+    }
 
     try {
       const res = await fetch('/api/login', {
@@ -92,70 +130,83 @@
       if (res.ok) {
         token = data.token;
         currentUsername = data.username;
-        localStorage.setItem('chatToken', token); // Store token
-        localStorage.setItem('chatUsername', currentUsername); // Store username
+        // Removed currentRole storage
+        localStorage.setItem('chatToken', token);
+        localStorage.setItem('chatUsername', currentUsername);
+        // Removed chatRole from localStorage
         loginMessage.textContent = 'Login successful!';
         loginMessage.style.color = 'green';
-        document.getElementById('loginPassword').value = ''; // Clear password field
-        updateUI(); // Update UI after successful login
+        document.getElementById('loginPassword').value = '';
+        updateUI();
       } else {
-        loginMessage.textContent = data.error || 'Login failed.';
+        loginMessage.textContent = data.error || 'Login failed. Please check your credentials.';
         loginMessage.style.color = 'red';
       }
     } catch (error) {
       console.error('Login error:', error);
-      loginMessage.textContent = 'An error occurred during login.';
+      loginMessage.textContent = 'An unexpected error occurred during login.';
       loginMessage.style.color = 'red';
     }
   }
 
-  // --- Logout Function ---
+  // --- User Logout Function ---
   function logout() {
     token = null;
     currentUsername = null;
+    // Removed currentRole clearing
     localStorage.removeItem('chatToken');
     localStorage.removeItem('chatUsername');
+    // Removed chatRole from localStorage
     updateUI();
-    chatBox.innerHTML = ''; // Clear chat messages
+    loginMessage.textContent = '';
+    registerMessage.textContent = '';
   }
 
-  // --- Fetch Messages Function (now with token) ---
+  // --- Fetch Messages Function ---
   async function fetchMessages() {
-    if (!token) return; // Don't fetch if no token
+    if (!token) {
+      updateUI();
+      return;
+    }
 
     try {
       const res = await fetch('/api/chat', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+
       if (res.ok) {
         const data = await res.json();
         chatBox.innerHTML = '';
         data.messages.reverse().forEach(msg => {
           const li = document.createElement('li');
+          // Removed admin role check and styling logic for messages
           li.textContent = `[${msg.username}]: ${msg.content}`;
           chatBox.appendChild(li);
         });
+        chatBox.scrollTop = chatBox.scrollHeight;
       } else if (res.status === 401 || res.status === 403) {
-        // Token expired or invalid, force logout
         console.warn('Token invalid or expired. Logging out.');
         logout();
+        alert('Your session expired or is invalid. Please log in again.');
       } else {
-        console.error('Failed to fetch messages:', res.statusText);
+        console.error('Failed to fetch messages:', res.status, res.statusText);
       }
     } catch (error) {
       console.error('Error fetching messages:', error);
     }
   }
 
-  // --- Send Message Function (now with token) ---
+  // --- Send Message Function ---
   async function sendMessage() {
     if (!token) {
       alert('Please log in to send messages.');
       return;
     }
 
-    const content = document.getElementById('messageInput').value;
-    if (!content) return;
+    const content = document.getElementById('messageInput').value.trim();
+    if (!content) {
+      return;
+    }
 
     try {
       const res = await fetch('/api/chat', {
@@ -164,7 +215,7 @@
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ content }) // No need to send username from client, it's in the token
+        body: JSON.stringify({ content })
       });
 
       if (res.ok) {
@@ -184,11 +235,27 @@
     }
   }
 
-  // Initial UI update and message fetch if already logged in
+  // Initial UI update when the page loads
   updateUI();
-  if (token && currentUsername) {
-    setInterval(fetchMessages, 1000);
-  }
+
+  // Add event listeners for Enter key
+  document.getElementById('messageInput').addEventListener('keypress', function(event) {
+    if (event.key === 'Enter') {
+      sendMessage();
+    }
+  });
+
+  document.getElementById('loginPassword').addEventListener('keypress', function(event) {
+    if (event.key === 'Enter') {
+      loginUser();
+    }
+  });
+
+  document.getElementById('registerPassword').addEventListener('keypress', function(event) {
+    if (event.key === 'Enter') {
+      registerUser();
+    }
+  });
 </script>
 </body>
 </html>

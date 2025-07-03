@@ -8,7 +8,6 @@ const pool = new Pool({
 });
 
 // Secret key for JWTs - IMPORTANT: Store this securely in an environment variable in production!
-// For Vercel, set this in your project's Environment Variables.
 const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_jwt_key_please_change_this_in_prod';
 
 export default async function handler(req, res) {
@@ -21,16 +20,17 @@ export default async function handler(req, res) {
 
   try {
     client = await pool.connect(); // Get a client from the pool
-    const { username, password } = req.body;
+    // Trim whitespace from username before processing
+    const username = req.body.username ? req.body.username.trim() : '';
+    const password = req.body.password;
 
     // Basic validation for input
     if (!username || !password) {
       return res.status(400).json({ error: 'Username and password are required.' });
     }
 
-    // Query the database to find the user by username
-    // We fetch the stored password (now plain text as per your previous request)
-    const result = await client.query('SELECT id, username, password_hash FROM users WHERE username = $1', [username]);
+    // Query the database to find the user by username, including their role
+    const result = await client.query('SELECT id, username, password_hash, role FROM users WHERE username = $1', [username]);
     const user = result.rows[0];
 
     // If no user found with that username
@@ -39,8 +39,6 @@ export default async function handler(req, res) {
     }
 
     // Compare the provided password directly with the stored plain-text password
-    // WARNING: This is less secure than using bcrypt for password hashing.
-    // This direct comparison is based on your explicit request to remove password hashing.
     const passwordMatch = (password === user.password_hash);
 
     // If passwords do not match
@@ -49,15 +47,15 @@ export default async function handler(req, res) {
     }
 
     // If authentication is successful, generate a JSON Web Token (JWT)
-    // The JWT payload includes user ID and username for identification in subsequent requests
+    // The JWT payload now includes the user's role
     const token = jwt.sign(
-      { userId: user.id, username: user.username }, // Payload data
+      { userId: user.id, username: user.username, role: user.role }, // Payload data
       JWT_SECRET,                                  // Secret key for signing
       { expiresIn: '1h' }                           // Token expiration time (e.g., 1 hour)
     );
 
-    // Return the token and username to the client
-    return res.status(200).json({ token, username: user.username });
+    // Return the token, username, and role to the client
+    return res.status(200).json({ token, username: user.username, role: user.role });
 
   } catch (err) {
     // Log any server-side errors

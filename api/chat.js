@@ -16,8 +16,7 @@ export default async function handler(req, res) {
   try {
     client = await pool.connect(); // Get a client from the pool
 
-    // --- Authentication Middleware for Chat Endpoints ---
-    // All requests to /api/chat will now require a valid JWT token.
+    // --- Authentication Middleware for All Protected Endpoints ---
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1]; // Expects "Bearer <token>"
 
@@ -36,47 +35,70 @@ export default async function handler(req, res) {
     }
 
     // Attach the decoded user information (from the token payload) to the request object.
-    // This makes user data (like username) available for subsequent chat logic.
     req.user = decoded;
 
+    // --- Get All Registered Users Endpoint ---
+    if (req.url === '/api/users' && req.method === 'GET') {
+      try {
+        // Select username and role from the users table.
+        const result = await client.query('SELECT username, role FROM users ORDER BY username ASC');
+        // Return an array of objects, each with username and role
+        return res.status(200).json({ users: result.rows });
+      } catch (dbError) {
+        console.error('Database error fetching users:', dbError);
+        return res.status(500).json({ error: 'Failed to retrieve users from database.' });
+      }
+    }
+
     // --- Chat Message Handling ---
-    // This part now assumes the request has been authenticated by the middleware above.
     if (req.url === '/api/chat') {
 
       // --- GET Request: Fetch messages ---
       if (req.method === 'GET') {
-        // Select messages, ordered by timestamp, limit to 50
-        const result = await client.query('SELECT username, content, timestamp FROM messages ORDER BY timestamp DESC LIMIT 50');
+        // Select messages and JOIN with users table to get the sender's role
+        const result = await client.query(`
+          SELECT
+              m.username,
+              m.content,
+              m.timestamp,
+              u.role
+          FROM
+              messages m
+          JOIN
+              users u ON m.username = u.username
+          ORDER BY
+              m.timestamp DESC
+          LIMIT 50
+        `);
         return res.status(200).json({ messages: result.rows });
       }
 
       // --- POST Request: Send a message ---
       if (req.method === 'POST') {
         const { content } = req.body;
-        // The username is now taken directly from the authenticated token's payload,
-        // ensuring messages are attributed to the logged-in user.
-        const username = req.user.username;
+        const username = req.user.username; // Username from authenticated token
 
-        // Basic validation for message content
         if (!content) {
           return res.status(400).json({ error: 'Message content is required.' });
         }
 
-        // Insert the new message into the 'messages' table
         await client.query('INSERT INTO messages (username, content) VALUES ($1, $2)', [username, content]);
         return res.status(201).json({ success: true, message: 'Message sent successfully.' });
       }
+
+      // --- DELETE Request: Delete all messages ---
+      if (req.method === 'DELETE') {
+        await client.query('DELETE FROM messages');
+        return res.status(200).json({ success: true, message: 'All messages deleted successfully.' });
+      }
     }
 
-    // If the request method or URL does not match any defined routes within /api/chat
     res.status(405).end(); // Method Not Allowed
 
   } catch (err) {
-    // Log any server-side errors that occur outside of specific error handling
     console.error('Server error in chat API:', err);
     res.status(500).json({ error: 'Internal server error in chat API.' });
   } finally {
-    // Release the database client back to the pool to prevent connection leaks
     if (client) {
       client.release();
     }

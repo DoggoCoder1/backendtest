@@ -16,7 +16,9 @@ export default async function handler(req, res) {
 
   try {
     client = await pool.connect(); // Get a client from the pool
-    const { username, password } = req.body;
+    // Trim whitespace from username before processing
+    const username = req.body.username ? req.body.username.trim() : '';
+    const password = req.body.password;
 
     // Basic validation for input
     if (!username || !password) {
@@ -26,8 +28,6 @@ export default async function handler(req, res) {
     try {
       // WARNING: Storing passwords in plain text is highly discouraged for sensitive applications.
       // This is done based on your explicit request to remove password hashing.
-      // If this application ever handles sensitive user data or if users might reuse passwords,
-      // it is strongly recommended to re-implement password hashing (e.g., with bcrypt).
       await client.query('INSERT INTO users (username, password_hash) VALUES ($1, $2)', [username, password]);
 
       return res.status(201).json({ message: 'User registered successfully.' });

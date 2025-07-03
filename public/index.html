@@ -31,6 +31,8 @@
       <button onclick="logout()">Logout</button>
     </div>
     <ul id="chatBox"></ul>
+    <!-- Audio element for notification -->
+    <audio id="notificationSound" src="/notification.wav" preload="auto"></audio>
   </div>
 
 <script>
@@ -46,6 +48,7 @@
   const loggedInUsernameDisplay = document.getElementById('loggedInUsername');
   const registerMessage = document.getElementById('registerMessage');
   const loginMessage = document.getElementById('loginMessage');
+  const notificationSound = document.getElementById('notificationSound'); // Get audio element
 
   // Function to update the UI based on authentication status
   function updateUI() {
@@ -176,7 +179,11 @@
 
       if (res.ok) {
         const data = await res.json();
-        chatBox.innerHTML = '';
+        // Check if there are new messages before updating and playing sound
+        const currentMessageCount = chatBox.children.length;
+        const newMessageCount = data.messages.length;
+
+        chatBox.innerHTML = ''; // Clear existing messages
         data.messages.reverse().forEach(msg => {
           const li = document.createElement('li');
           // Removed admin role check and styling logic for messages
@@ -184,6 +191,12 @@
           chatBox.appendChild(li);
         });
         chatBox.scrollTop = chatBox.scrollHeight;
+
+        // Play notification sound only if new messages have arrived
+        if (newMessageCount > currentMessageCount) {
+          notificationSound.play().catch(e => console.error("Error playing sound:", e));
+        }
+
       } else if (res.status === 401 || res.status === 403) {
         console.warn('Token invalid or expired. Logging out.');
         logout();

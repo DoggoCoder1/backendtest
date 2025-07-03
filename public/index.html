@@ -8,69 +8,44 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <h1 id="viewCount">-</h1>
-  <p id="yourClicks">-</p>
-  <h2 id="onlineCount">-</h2>
-  <button id="clickButton">Click</button>
-  <button id="toggleDarkMode">Theme</button>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
-  <script>
-    const viewCount = document.getElementById('viewCount');
-    const onlineCount = document.getElementById('onlineCount');
-    const clickBtn = document.getElementById('clickButton');
-    const yourClicks = document.getElementById('yourClicks');
-    const darkModeBtn = document.getElementById('toggleDarkMode');
+  <div>
+  <input id="username" placeholder="Your name">
+  <input id="messageInput" placeholder="Type a message">
+  <button onclick="sendMessage()">Send</button>
+</div>
+<ul id="chatBox"></ul>
 
-    if (!localStorage.yourClicks) localStorage.yourClicks = 0;
-    if (localStorage.theme === 'dark') document.body.classList.add('dark');
+<script>
+  const chatBox = document.getElementById('chatBox');
 
-    function updateLocalClicks() {
-      localStorage.yourClicks = +localStorage.yourClicks + 1;
-      yourClicks.textContent = `Your Clicks: ${localStorage.yourClicks}`;
-    }
-
-    async function fetchStats() {
-      try {
-        const res = await fetch('/api/hello');
-        const data = await res.json();
-        viewCount.textContent = `Clicks: ${data.pageViewCount ?? 'N/A'}`;
-        onlineCount.textContent = `Online Users: ${data.onlineUsers ?? 'N/A'}`;
-        yourClicks.textContent = `Your Clicks: ${localStorage.yourClicks}`;
-      } catch {
-        onlineCount.textContent = 'Failed to fetch stats';
-      }
-    }
-
-    async function incrementCount() {
-      clickBtn.disabled = true;
-      updateLocalClicks();
-      try {
-        const res = await fetch('/api/hello', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-        const data = await res.json();
-        viewCount.textContent = `Clicks: ${data.newCount ?? 'N/A'}`;
-      } catch {
-        viewCount.textContent = 'Error';
-      }
-      clickBtn.disabled = false;
-    }
-
-    clickBtn.onclick = incrementCount;
-    darkModeBtn.onclick = () => {
-      document.body.classList.toggle('dark');
-      localStorage.theme = document.body.classList.contains('dark') ? 'dark' : 'light';
-      anime({ targets: 'body', opacity: [0, 1], scale: [0.9, 1], rotateZ: [-4, 0], duration: 1200, easing: 'easeInOutQuad' });
-    };
-
-    anime.timeline().add({
-      targets: 'h1, h2, #clickButton, #toggleDarkMode',
-      opacity: [0, 1],
-      translateY: [30, 0],
-      easing: 'easeOutQuad',
-      duration: 800,
-      delay: anime.stagger(100)
+  async function fetchMessages() {
+    const res = await fetch('/api/hello');
+    const data = await res.json();
+    chatBox.innerHTML = '';
+    data.messages.reverse().forEach(msg => {
+      const li = document.createElement('li');
+      li.textContent = `[${msg.username}]: ${msg.content}`;
+      chatBox.appendChild(li);
     });
-    window.onload = fetchStats;
-    setInterval(fetchStats, 1000);
-  </script>
+  }
+
+  async function sendMessage() {
+    const username = document.getElementById('username').value;
+    const content = document.getElementById('messageInput').value;
+    if (!username || !content) return;
+
+    await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, content })
+    });
+
+    document.getElementById('messageInput').value = '';
+    fetchMessages();
+  }
+
+  setInterval(fetchMessages, 1000); // Poll every 1 second
+  fetchMessages(); // Initial load
+</script>
 </body>
 </html>

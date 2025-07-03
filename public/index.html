@@ -193,7 +193,7 @@
         data.messages.reverse().forEach(msg => {
           const li = document.createElement('li');
           // Removed admin role check and styling logic for messages
-          li.textContent = `[${msg.username}]: ${msg.content}`;
+          li.innerHTML = `[${msg.username}]: ${msg.content}`;
           chatBox.appendChild(li);
         });
         chatBox.scrollTop = chatBox.scrollHeight;

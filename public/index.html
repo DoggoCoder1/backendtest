@@ -24,13 +24,14 @@
   </div>
 
   <div id="chatSection" style="display:none;">
+    <ul id="chatBox"></ul>
     <p>Logged in as: <strong id="loggedInUsername"></strong></p>
     <div>
       <input id="messageInput" placeholder="Type a message">
       <button onclick="sendMessage()">Send</button>
       <button onclick="logout()">Logout</button>
     </div>
-    <ul id="chatBox"></ul>
+    
     <!-- Audio element for notification -->
     <!-- IMPORTANT: Ensure 'notification.wav' is placed in your project's 'public' directory -->
     <audio id="notificationSound" src="/notification.wav" preload="auto"></audio>

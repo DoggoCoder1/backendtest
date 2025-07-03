@@ -170,59 +170,72 @@
     registerMessage.textContent = '';
   }
 
-  // --- Fetch Messages Function ---
-  async function fetchMessages() {
-    if (!token) {
-      updateUI();
-      return;
-    }
+let lastMessageId = null; // Track the last message ID
 
-    try {
-      const res = await fetch('/api/chat', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+async function fetchMessages() {
+  if (!token) {
+    updateUI();
+    return;
+  }
 
-      if (res.ok) {
-  const data = await res.json();
-  const currentMessageCount = chatBox.children.length;
-  const newMessageCount = data.messages.length;
+  try {
+    const res = await fetch('/api/chat', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
 
-  let playEveryoneSound = false;
+    if (res.ok) {
+      const data = await res.json();
+      const messages = data.messages;
 
-  chatBox.innerHTML = ''; // Clear existing messages
+      // If no new messages or no change, do nothing
+      if (!messages.length) return;
 
-  data.messages.reverse().forEach(msg => {
-    const li = document.createElement('li');
-    li.textContent = `[${msg.username}]: ${msg.content}`;
-    chatBox.appendChild(li);
+      const latestMsg = messages[messages.length - 1];
+      if (latestMsg.id === lastMessageId) return; // No new messages
 
-    if (msg.content.includes('@everyone')) {
-      playEveryoneSound = true;
-    }
-  });
+      let playEveryoneSound = false;
 
-  chatBox.scrollTop = chatBox.scrollHeight;
+      // Add only the new messages
+      for (const msg of messages) {
+        if (!document.getElementById(`msg-${msg.id}`)) {
+          const li = document.createElement('li');
+          li.textContent = `[${msg.username}]: ${msg.content}`;
+          li.id = `msg-${msg.id}`;
+          chatBox.appendChild(li);
 
-  // Play appropriate sound
-  if (newMessageCount > currentMessageCount) {
-    if (playEveryoneSound) {
-      document.getElementById('everyoneSound').play().catch(e => console.error("Error playing @everyone sound:", e));
+          if (msg.content.includes('@everyone')) {
+            playEveryoneSound = true;
+          }
+        }
+      }
+
+      lastMessageId = latestMsg.id;
+
+      // Scroll if near bottom
+      const isAtBottom = chatBox.scrollTop + chatBox.clientHeight >= chatBox.scrollHeight - 50;
+      if (isAtBottom) {
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
+
+      // Play sound
+      if (playEveryoneSound) {
+        everyoneSound.play().catch(console.error);
+      } else {
+        notificationSound.play().catch(console.error);
+      }
+
+    } else if (res.status === 401 || res.status === 403) {
+      logout();
+      alert('Session expired. Please log in again.');
     } else {
-      notificationSound.play().catch(e => console.error("Error playing sound:", e));
+      console.error('Failed to fetch messages:', res.statusText);
     }
+
+  } catch (err) {
+    console.error('Error fetching messages:', err);
   }
 }
- else if (res.status === 401 || res.status === 403) {
-        console.warn('Token invalid or expired. Logging out.');
-        logout();
-        alert('Your session expired or is invalid. Please log in again.');
-      } else {
-        console.error('Failed to fetch messages:', res.status, res.statusText);
-      }
-    } catch (error) {
-      console.error('Error fetching messages:', error);
-    }
-  }
+
 
   // --- Send Message Function ---
   async function sendMessage() {

@@ -1,6 +1,5 @@
 import { Pool } from 'pg';
-import jwt from 'jsonwebtoken';
-// Removed bcrypt as password hashing is no longer desired.
+import jwt from 'jsonwebtoken'; // Import jsonwebtoken to verify tokens
 
 // Initialize PostgreSQL connection pool
 const pool = new Pool({
@@ -8,8 +7,7 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false } // Required for Neon's SSL
 });
 
-// Secret key for JWTs - IMPORTANT: Store this securely in an environment variable in production!
-// For Vercel, set this in your project's Environment Variables.
+// Secret key for JWTs - IMPORTANT: This MUST match the JWT_SECRET in your login.js
 const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_jwt_key_please_change_this_in_prod';
 
 export default async function handler(req, res) {
@@ -18,99 +16,32 @@ export default async function handler(req, res) {
   try {
     client = await pool.connect(); // Get a client from the pool
 
-    // --- User Registration Endpoint ---
-    // Handles POST requests to /api/register for new user creation
-    if (req.method === 'POST' && req.url === '/api/register') {
-      const { username, password } = req.body;
+    // --- Authentication Middleware for Chat Endpoints ---
+    // All requests to /api/chat will now require a valid JWT token.
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1]; // Expects "Bearer <token>"
 
-      // Basic validation for input
-      if (!username || !password) {
-        return res.status(400).json({ error: 'Username and password are required.' });
-      }
-
-      try {
-        // Store the password directly without hashing, as requested.
-        // WARNING: Storing passwords in plain text is highly discouraged for sensitive applications.
-        // This is done based on your explicit request that "no sensitive info being stored".
-        await client.query('INSERT INTO users (username, password_hash) VALUES ($1, $2)', [username, password]);
-
-        return res.status(201).json({ message: 'User registered successfully.' });
-      } catch (dbError) {
-        // Check for PostgreSQL unique violation error (error code '23505')
-        if (dbError.code === '23505') {
-          return res.status(409).json({ error: 'Username already exists. Please choose a different username.' });
-        }
-        // Re-throw other database errors for generic 500 handling
-        throw dbError;
-      }
+    // If no token is provided, return 401 Unauthorized
+    if (!token) {
+      return res.status(401).json({ error: 'Authentication token required.' });
     }
 
-    // --- User Login Endpoint ---
-    // Handles POST requests to /api/login for user authentication
-    if (req.method === 'POST' && req.url === '/api/login') {
-      const { username, password } = req.body;
-
-      // Basic validation for input
-      if (!username || !password) {
-        return res.status(400).json({ error: 'Username and password are required.' });
-      }
-
-      // Query the database to find the user by username
-      // Fetch the stored password (now plain text)
-      const result = await client.query('SELECT id, username, password_hash FROM users WHERE username = $1', [username]);
-      const user = result.rows[0];
-
-      // If no user found with that username
-      if (!user) {
-        return res.status(401).json({ error: 'Invalid username or password.' });
-      }
-
-      // Compare the provided password directly with the stored plain-text password
-      // WARNING: This is less secure than using bcrypt for password hashing.
-      const passwordMatch = (password === user.password_hash);
-
-      // If passwords do not match
-      if (!passwordMatch) {
-        return res.status(401).json({ error: 'Invalid username or password.' });
-      }
-
-      // If authentication is successful, generate a JSON Web Token (JWT)
-      // The JWT payload includes user ID and username for identification in subsequent requests
-      const token = jwt.sign(
-        { userId: user.id, username: user.username }, // Payload data
-        JWT_SECRET,                                  // Secret key for signing
-        { expiresIn: '1h' }                           // Token expiration time (e.g., 1 hour)
-      );
-
-      // Return the token and username to the client
-      return res.status(200).json({ token, username: user.username });
+    let decoded;
+    try {
+      // Verify the token using the secret key
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      // If token is invalid (e.g., expired, malformed, tampered), return 403 Forbidden
+      return res.status(403).json({ error: 'Invalid or expired token.' });
     }
 
-    // --- Chat Message Handling Endpoint (Requires Authentication) ---
-    // Handles GET and POST requests to /api/chat
+    // Attach the decoded user information (from the token payload) to the request object.
+    // This makes user data (like username) available for subsequent chat logic.
+    req.user = decoded;
+
+    // --- Chat Message Handling ---
+    // This part now assumes the request has been authenticated by the middleware above.
     if (req.url === '/api/chat') {
-      // Extract the authentication token from the Authorization header
-      // Format: "Bearer <token>"
-      const authHeader = req.headers['authorization'];
-      const token = authHeader && authHeader.split(' ')[1]; // Get the token part
-
-      // If no token is provided, return 401 Unauthorized
-      if (!token) {
-        return res.status(401).json({ error: 'Authentication token required.' });
-      }
-
-      let decoded;
-      try {
-        // Verify the token using the secret key
-        decoded = jwt.verify(token, JWT_SECRET);
-      } catch (err) {
-        // If token is invalid (e.g., expired, malformed), return 403 Forbidden
-        return res.status(403).json({ error: 'Invalid or expired token.' });
-      }
-
-      // Attach the decoded user information to the request object
-      // This makes user data (like username) available for subsequent logic
-      req.user = decoded;
 
       // --- GET Request: Fetch messages ---
       if (req.method === 'GET') {
@@ -122,7 +53,8 @@ export default async function handler(req, res) {
       // --- POST Request: Send a message ---
       if (req.method === 'POST') {
         const { content } = req.body;
-        // The username is now taken from the authenticated token, not from client input
+        // The username is now taken directly from the authenticated token's payload,
+        // ensuring messages are attributed to the logged-in user.
         const username = req.user.username;
 
         // Basic validation for message content
@@ -136,15 +68,15 @@ export default async function handler(req, res) {
       }
     }
 
-    // If the request method or URL does not match any defined routes
+    // If the request method or URL does not match any defined routes within /api/chat
     res.status(405).end(); // Method Not Allowed
 
   } catch (err) {
-    // Log any server-side errors
-    console.error('Server error:', err);
-    res.status(500).json({ error: 'Internal server error.' });
+    // Log any server-side errors that occur outside of specific error handling
+    console.error('Server error in chat API:', err);
+    res.status(500).json({ error: 'Internal server error in chat API.' });
   } finally {
-    // Release the database client back to the pool
+    // Release the database client back to the pool to prevent connection leaks
     if (client) {
       client.release();
     }

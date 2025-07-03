@@ -170,7 +170,7 @@
     registerMessage.textContent = '';
   }
 
-let lastMessageId = null; // Track the last message ID
+let lastMessageCount = 0;
 
 async function fetchMessages() {
   if (!token) {
@@ -185,33 +185,26 @@ async function fetchMessages() {
 
     if (res.ok) {
       const data = await res.json();
-      const messages = data.messages;
+      const newMessages = data.messages;
 
-      // If no new messages or no change, do nothing
-      if (!messages.length) return;
-
-      const latestMsg = messages[messages.length - 1];
-      if (latestMsg.id === lastMessageId) return; // No new messages
+      // Don't do anything if message count hasn't changed
+      if (newMessages.length <= lastMessageCount) return;
 
       let playEveryoneSound = false;
 
       // Add only the new messages
-      for (const msg of messages) {
-        if (!document.getElementById(`msg-${msg.id}`)) {
-          const li = document.createElement('li');
-          li.textContent = `[${msg.username}]: ${msg.content}`;
-          li.id = `msg-${msg.id}`;
-          chatBox.appendChild(li);
+      for (let i = lastMessageCount; i < newMessages.length; i++) {
+        const msg = newMessages[i];
+        const li = document.createElement('li');
+        li.textContent = `[${msg.username}]: ${msg.content}`;
+        chatBox.appendChild(li);
 
-          if (msg.content.includes('@everyone')) {
-            playEveryoneSound = true;
-          }
+        if (msg.content.includes('@everyone')) {
+          playEveryoneSound = true;
         }
       }
 
-      lastMessageId = latestMsg.id;
-
-      // Scroll if near bottom
+      // Scroll only if near bottom
       const isAtBottom = chatBox.scrollTop + chatBox.clientHeight >= chatBox.scrollHeight - 50;
       if (isAtBottom) {
         chatBox.scrollTop = chatBox.scrollHeight;
@@ -224,11 +217,14 @@ async function fetchMessages() {
         notificationSound.play().catch(console.error);
       }
 
+      // Update count
+      lastMessageCount = newMessages.length;
+
     } else if (res.status === 401 || res.status === 403) {
       logout();
       alert('Session expired. Please log in again.');
     } else {
-      console.error('Failed to fetch messages:', res.statusText);
+      console.error('Fetch failed:', res.statusText);
     }
 
   } catch (err) {

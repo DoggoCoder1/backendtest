@@ -19,7 +19,7 @@
   const chatBox = document.getElementById('chatBox');
 
   async function fetchMessages() {
-    const res = await fetch('/api/hello');
+    const res = await fetch('/api/chat');
     const data = await res.json();
     chatBox.innerHTML = '';
     data.messages.reverse().forEach(msg => {

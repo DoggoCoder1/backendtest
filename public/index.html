@@ -32,6 +32,7 @@
     </div>
     <ul id="chatBox"></ul>
     <!-- Audio element for notification -->
+    <!-- IMPORTANT: Ensure 'notification.wav' is placed in your project's 'public' directory -->
     <audio id="notificationSound" src="/notification.wav" preload="auto"></audio>
   </div>
 
@@ -49,6 +50,10 @@
   const registerMessage = document.getElementById('registerMessage');
   const loginMessage = document.getElementById('loginMessage');
   const notificationSound = document.getElementById('notificationSound'); // Get audio element
+
+  // Log the audio source to console for debugging
+  console.log("Notification sound source:", notificationSound.src);
+
 
   // Function to update the UI based on authentication status
   function updateUI() {

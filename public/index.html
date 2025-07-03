@@ -34,6 +34,7 @@
     <!-- IMPORTANT: Ensure 'notification.wav' is placed in your project's 'public' directory -->
     <audio id="notificationSound" src="/notification.wav" preload="auto"></audio>
     <audio id="everyoneSound" src="/everyone.wav" preload="auto"></audio>
+
   </div>
 
 <script>
@@ -170,68 +171,49 @@
     registerMessage.textContent = '';
   }
 
-let lastMessageCount = 0;
-
-async function fetchMessages() {
-  if (!token) {
-    updateUI();
-    return;
-  }
-
-  try {
-    const res = await fetch('/api/chat', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-      const newMessages = data.messages;
-
-      // Don't do anything if message count hasn't changed
-      if (newMessages.length <= lastMessageCount) return;
-
-      let playEveryoneSound = false;
-
-      // Add only the new messages
-      for (let i = lastMessageCount; i < newMessages.length; i++) {
-        const msg = newMessages[i];
-        const li = document.createElement('li');
-        li.textContent = `[${msg.username}]: ${msg.content}`;
-        chatBox.appendChild(li);
-
-        if (msg.content.includes('@everyone')) {
-          playEveryoneSound = true;
-        }
-      }
-
-      // Scroll only if near bottom
-      const isAtBottom = chatBox.scrollTop + chatBox.clientHeight >= chatBox.scrollHeight - 50;
-      if (isAtBottom) {
-        chatBox.scrollTop = chatBox.scrollHeight;
-      }
-
-      // Play sound
-      if (playEveryoneSound) {
-        everyoneSound.play().catch(console.error);
-      } else {
-        notificationSound.play().catch(console.error);
-      }
-
-      // Update count
-      lastMessageCount = newMessages.length;
-
-    } else if (res.status === 401 || res.status === 403) {
-      logout();
-      alert('Session expired. Please log in again.');
-    } else {
-      console.error('Fetch failed:', res.statusText);
+  // --- Fetch Messages Function ---
+  async function fetchMessages() {
+    if (!token) {
+      updateUI();
+      return;
     }
 
-  } catch (err) {
-    console.error('Error fetching messages:', err);
-  }
-}
+    try {
+      const res = await fetch('/api/chat', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
 
+      if (res.ok) {
+        const data = await res.json();
+        // Check if there are new messages before updating and playing sound
+        const currentMessageCount = chatBox.children.length;
+        const newMessageCount = data.messages.length;
+
+        chatBox.innerHTML = ''; // Clear existing messages
+        data.messages.reverse().forEach(msg => {
+          const li = document.createElement('li');
+          // Removed admin role check and styling logic for messages
+          li.textContent = `[${msg.username}]: ${msg.content}`;
+          chatBox.appendChild(li);
+        });
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        // Play notification sound only if new messages have arrived
+        if (newMessageCount > currentMessageCount) {
+          notificationSound.play().catch(e => console.error("Error playing sound:", e));
+        }
+
+      } else if (res.status === 401 || res.status === 403) {
+        console.warn('Token invalid or expired. Logging out.');
+        logout();
+        alert('Your session expired or is invalid. Please log in again.');
+      } else {
+        console.error('Failed to fetch messages:', res.status, res.statusText);
+      }
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+    }
+  }
 
   // --- Send Message Function ---
   async function sendMessage() {

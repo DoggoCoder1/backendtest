@@ -5,8 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>wowchat</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
-  <!-- Removed Tailwind CSS link -->
-  <!-- Removed custom styles.css link -->
+  <link rel=stylesheet href="/styles.css">
 </head>
 <body>
   <div id="authSection">
@@ -34,6 +33,7 @@
     <!-- Audio element for notification -->
     <!-- IMPORTANT: Ensure 'notification.wav' is placed in your project's 'public' directory -->
     <audio id="notificationSound" src="/notification.wav" preload="auto"></audio>
+    <audio id="everyoneSound" src="/everyone.wav" preload="auto"></audio>
   </div>
 
 <script>
@@ -101,11 +101,36 @@
       const data = await res.json();
 
       if (res.ok) {
-        registerMessage.textContent = data.message;
-        registerMessage.style.color = 'green';
-        document.getElementById('registerUsername').value = '';
-        document.getElementById('registerPassword').value = '';
-      } else {
+  const data = await res.json();
+  const currentMessageCount = chatBox.children.length;
+  const newMessageCount = data.messages.length;
+
+  let playEveryoneSound = false;
+
+  chatBox.innerHTML = ''; // Clear existing messages
+
+  data.messages.reverse().forEach(msg => {
+    const li = document.createElement('li');
+    li.textContent = `[${msg.username}]: ${msg.content}`;
+    chatBox.appendChild(li);
+
+    if (msg.content.includes('@everyone')) {
+      playEveryoneSound = true;
+    }
+  });
+
+  chatBox.scrollTop = chatBox.scrollHeight;
+
+  // Play appropriate sound
+  if (newMessageCount > currentMessageCount) {
+    if (playEveryoneSound) {
+      document.getElementById('everyoneSound').play().catch(e => console.error("Error playing @everyone sound:", e));
+    } else {
+      notificationSound.play().catch(e => console.error("Error playing sound:", e));
+    }
+  }
+}
+ else {
         registerMessage.textContent = data.error || 'Registration failed.';
         registerMessage.style.color = 'red';
       }

@@ -1,23 +1,18 @@
-// /api/click.js
-
-import { verifyToken } from './auth';  // Your JWT/token logic
 import { Pool } from 'pg';
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL, // Neon connection string
-  ssl: { rejectUnauthorized: false }          // needed for Neon
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
 });
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ error: 'Only POST allowed' });
   }
 
-  const token = req.headers.authorization?.split(' ')[1];
-  const user = await verifyToken(token); // must return { username }
-
-  if (!user) {
-    return res.status(401).json({ error: 'Unauthorized' });
+  const { username } = req.body;
+  if (!username) {
+    return res.status(400).json({ error: 'Username required' });
   }
 
   try {
@@ -28,7 +23,7 @@ export default async function handler(req, res) {
        SET click_count = click_count + 1
        WHERE username = $1
        RETURNING click_count`,
-      [user.username]
+      [username]
     );
 
     client.release();
@@ -38,8 +33,8 @@ export default async function handler(req, res) {
     }
 
     res.status(200).json({ clickCount: result.rows[0].click_count });
-  } catch (err) {
-    console.error('Click error:', err);
+  } catch (error) {
+    console.error('DB error:', error);
     res.status(500).json({ error: 'Database error' });
   }
 }

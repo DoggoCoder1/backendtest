@@ -34,65 +34,167 @@
 
 
 <script>
+  // Persistent user session
+  let token = localStorage.getItem('chatToken');
+  let currentUsername = localStorage.getItem('chatUsername');
+
+  // DOM references
+  const authSection = document.getElementById('authSection');
+  const clickerSection = document.getElementById('clickerSection');
+  const loggedInUsernameDisplay = document.getElementById('loggedInUsername');
   const userClickCountEl = document.getElementById('userClickCount');
-const leaderboardList = document.getElementById('leaderboardList');
-const clickerSection = document.getElementById('clickerSection');
+  const leaderboardList = document.getElementById('leaderboardList');
 
-// Replace fetchMessages() with:
-async function fetchLeaderboard() {
-  try {
-    const res = await fetch('/api/leaderboard');
-    const data = await res.json();
-    leaderboardList.innerHTML = '';
-
-    data.leaderboard.forEach(user => {
-      const li = document.createElement('li');
-      li.textContent = `${user.username} - ${user.click_count} clicks`;
-      leaderboardList.appendChild(li);
-    });
-  } catch (err) {
-    console.error('Error fetching leaderboard:', err);
-  }
-}
-
-// New: sendClick()
-async function sendClick() {
-  if (!token) return;
-
-  try {
-    const res = await fetch('/api/click', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-      userClickCountEl.textContent = data.clickCount;
-      fetchLeaderboard(); // Refresh leaderboard after each click
+  // --- UI Handling ---
+  function updateUI() {
+    if (token && currentUsername) {
+      authSection.style.display = 'none';
+      clickerSection.style.display = 'block';
+      loggedInUsernameDisplay.textContent = currentUsername;
+      fetchLeaderboard();
+      getUserClickCount();
     } else {
-      console.error('Click failed');
+      authSection.style.display = 'block';
+      clickerSection.style.display = 'none';
+      leaderboardList.innerHTML = '';
+      userClickCountEl.textContent = '0';
     }
-  } catch (err) {
-    console.error('Click error:', err);
   }
-}
 
-// Update updateUI() to show the clicker section instead
-function updateUI() {
-  if (token && currentUsername) {
-    authSection.style.display = 'none';
-    clickerSection.style.display = 'block';
-    loggedInUsernameDisplay.textContent = currentUsername;
-    fetchLeaderboard(); // Load leaderboard on login
-    sendClick(); // Get initial user click count (optional)
-  } else {
-    authSection.style.display = 'block';
-    clickerSection.style.display = 'none';
-    leaderboardList.innerHTML = '';
-    userClickCountEl.textContent = '0';
+  // --- Register ---
+  async function registerUser() {
+    const username = document.getElementById('registerUsername').value.trim();
+    const password = document.getElementById('registerPassword').value;
+    const msg = document.getElementById('registerMessage');
+
+    if (!username || !password) {
+      msg.textContent = 'Please enter both username and password.';
+      msg.style.color = 'red';
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        msg.textContent = 'Registered! You can now log in.';
+        msg.style.color = 'green';
+      } else {
+        msg.textContent = data.error || 'Registration failed.';
+        msg.style.color = 'red';
+      }
+    } catch (err) {
+      console.error(err);
+      msg.textContent = 'Something went wrong.';
+      msg.style.color = 'red';
+    }
   }
-}
 
+  // --- Login ---
+  async function loginUser() {
+    const username = document.getElementById('loginUsername').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const msg = document.getElementById('loginMessage');
+
+    if (!username || !password) {
+      msg.textContent = 'Please enter both username and password.';
+      msg.style.color = 'red';
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        token = data.token;
+        currentUsername = data.username;
+        localStorage.setItem('chatToken', token);
+        localStorage.setItem('chatUsername', currentUsername);
+        updateUI();
+      } else {
+        msg.textContent = data.error || 'Login failed.';
+        msg.style.color = 'red';
+      }
+    } catch (err) {
+      console.error(err);
+      msg.textContent = 'Something went wrong.';
+      msg.style.color = 'red';
+    }
+  }
+
+  // --- Logout ---
+  function logout() {
+    token = null;
+    currentUsername = null;
+    localStorage.removeItem('chatToken');
+    localStorage.removeItem('chatUsername');
+    updateUI();
+  }
+
+  // --- Click ---
+  async function sendClick() {
+    if (!token) return;
+
+    try {
+      const res = await fetch('/api/click', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        userClickCountEl.textContent = data.clickCount;
+        fetchLeaderboard();
+      } else {
+        console.error('Click failed');
+      }
+    } catch (err) {
+      console.error('Click error:', err);
+    }
+  }
+
+  // --- Get user's current count on login ---
+  async function getUserClickCount() {
+    try {
+      const res = await fetch('/api/clicks', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        userClickCountEl.textContent = data.clickCount;
+      }
+    } catch (err) {
+      console.error('Fetch click count error:', err);
+    }
+  }
+
+  // --- Leaderboard ---
+  async function fetchLeaderboard() {
+    try {
+      const res = await fetch('/api/leaderboard');
+      const data = await res.json();
+      leaderboardList.innerHTML = '';
+      data.leaderboard.forEach(user => {
+        const li = document.createElement('li');
+        li.textContent = `${user.username} - ${user.click_count} clicks`;
+        leaderboardList.appendChild(li);
+      });
+    } catch (err) {
+      console.error('Leaderboard fetch error:', err);
+    }
+  }
+
+  // --- Init ---
+  updateUI();
 </script>
+
 </body>
 </html>

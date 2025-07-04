@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>wowchat</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+  <link rel=stylesheet href="/styles.css">
+</head>
+<body>
+  <div id="authSection">
+    <h1 style="color: red;">DISCLAIMER: Usernames are not filtered.</h1>
+    <h2>Register</h2>
+    <input id="registerUsername" placeholder="Username" type="text">
+    <input id="registerPassword" placeholder="Password" type="password">
+    <button onclick="registerUser()">Register</button>
+    <p id="registerMessage"></p>
+
+    <h2>Login</h2>
+    <input id="loginUsername" placeholder="Username" type="text">
+    <input id="loginPassword" placeholder="Password" type="password">
+    <button onclick="loginUser()">Login</button>
+    <p id="loginMessage"></p>
+  </div>
+
+  <div id="clickerSection" style="display:none;">
+  <h1>cool clicking game</h1>
+  <p>Logged in as: <strong id="loggedInUsername"></strong></p>
+  <h3>Your Clicks: <span id="userClickCount">0</span></h3>
+  <button onclick="sendClick(currentUsername)">Click Me!</button>
+  <button onclick="logout()">Logout</button>
+
+  <h3>🏆 Top 10 Leaderboard</h3>
+  <ol id="leaderboardList"></ol>
+  </div>
+
+
+<script>
+  let token = localStorage.getItem('chatToken');
+  let currentUsername = localStorage.getItem('chatUsername');
+
+  const authSection = document.getElementById('authSection');
+  const clickerSection = document.getElementById('clickerSection');
+  const loggedInUsernameDisplay = document.getElementById('loggedInUsername');
+  const userClickCountEl = document.getElementById('userClickCount');
+  const leaderboardList = document.getElementById('leaderboardList');
+
+  function updateUI() {
+    if (token && currentUsername) {
+      authSection.style.display = 'none';
+      clickerSection.style.display = 'block';
+      loggedInUsernameDisplay.textContent = currentUsername;
+      fetchLeaderboard();
+      getUserClickCount();
+    } else {
+      authSection.style.display = 'block';
+      clickerSection.style.display = 'none';
+      leaderboardList.innerHTML = '';
+      userClickCountEl.textContent = '0';
+    }
+  }
+
+  // --- Register ---
+  async function registerUser() {
+    const username = document.getElementById('registerUsername').value.trim();
+    const password = document.getElementById('registerPassword').value;
+    const msg = document.getElementById('registerMessage');
+
+    if (!username || !password) {
+      msg.textContent = 'Please enter both username and password.';
+      msg.style.color = 'red';
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        msg.textContent = 'Registered! You can now log in.';
+        msg.style.color = 'green';
+      } else {
+        msg.textContent = data.error || 'Registration failed.';
+        msg.style.color = 'red';
+      }
+    } catch (err) {
+      console.error(err);
+      msg.textContent = 'Something went wrong.';
+      msg.style.color = 'red';
+    }
+  }
+
+  // --- Login ---
+  async function loginUser() {
+    const username = document.getElementById('loginUsername').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const msg = document.getElementById('loginMessage');
+
+    if (!username || !password) {
+      msg.textContent = 'Please enter both username and password.';
+      msg.style.color = 'red';
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        token = data.token;
+        currentUsername = data.username;
+        localStorage.setItem('chatToken', token);
+        localStorage.setItem('chatUsername', currentUsername);
+        updateUI();
+      } else {
+        msg.textContent = data.error || 'Login failed.';
+        msg.style.color = 'red';
+      }
+    } catch (err) {
+      console.error(err);
+      msg.textContent = 'Something went wrong.';
+      msg.style.color = 'red';
+    }
+  }
+
+  // --- Logout ---
+  function logout() {
+    token = null;
+    currentUsername = null;
+    localStorage.removeItem('chatToken');
+    localStorage.removeItem('chatUsername');
+    updateUI();
+  }
+
+  // --- Click ---
+async function sendClick(username) {
+  try {
+    const res = await fetch('/api/click', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ username }) // <- This is essential!
+    });
+
+    const data = await res.json();
+    console.log('Updated count:', data.clickCount);
+  } catch (err) {
+    console.error('Click failed:', err);
+  }
+}
+
+  // --- Get user's current count on login ---
+async function getUserClickCount() {
+  try {
+    const res = await fetch('/api/clicks', {
+      headers: {
+        'X-Username': currentUsername  // Use your variable here
+      }
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      userClickCountEl.textContent = data.clickCount;
+    }
+  } catch (err) {
+    console.error('Fetch click count error:', err);
+  }
+}
+
+
+  // --- Leaderboard ---
+  async function fetchLeaderboard() {
+    try {
+      const res = await fetch('/api/leaderboard');
+      const data = await res.json();
+      leaderboardList.innerHTML = '';
+      data.leaderboard.forEach(user => {
+        const li = document.createElement('li');
+        li.textContent = `${user.username} - ${user.click_count} clicks`;
+        leaderboardList.appendChild(li);
+      });
+    } catch (err) {
+      console.error('Leaderboard fetch error:', err);
+    }
+  }
+
+  // --- Init ---
+  setInterval(updateUI, 3000);
+  updateUI();
+</script>
+
+</body>
+</html>

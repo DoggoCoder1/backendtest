@@ -20,7 +20,7 @@ export default async function handler(req, res) {
       SELECT username, click_count
       FROM users
       ORDER BY click_count DESC
-      LIMIT 3;
+      LIMIT 10;
     `);
 
     return res.status(200).json({ leaderboard: result.rows });

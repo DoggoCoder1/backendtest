@@ -5,101 +5,106 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-// In-memory rate limiting store
-const rateLimitStore = new Map();
-
-// Rate limiting configuration
-const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute in milliseconds
-const MAX_CLICKS_PER_WINDOW = 100; // Max clicks per minute per IP
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+const MAX_CLICKS_PER_WINDOW = 100; // Max clicks per IP per window
 
 function getClientIP(req) {
-  // Check various headers for the real IP address
   const forwarded = req.headers['x-forwarded-for'];
   const realIP = req.headers['x-real-ip'];
-  const cfConnectingIP = req.headers['cf-connecting-ip']; // Cloudflare
-  
+  const cfConnectingIP = req.headers['cf-connecting-ip'];
+
   if (forwarded) {
-    // x-forwarded-for can contain multiple IPs, take the first one
     return forwarded.split(',')[0].trim();
   }
-  
+
   return realIP || cfConnectingIP || req.connection?.remoteAddress || req.socket?.remoteAddress || '127.0.0.1';
 }
 
-function isRateLimited(ip) {
-  const now = Date.now();
-  const key = `${ip}`;
-  
-  if (!rateLimitStore.has(key)) {
-    rateLimitStore.set(key, {
-      count: 1,
-      resetTime: now + RATE_LIMIT_WINDOW
-    });
+// Create rate_limits table in your DB:
+// CREATE TABLE IF NOT EXISTS rate_limits (
+//   ip TEXT PRIMARY KEY,
+//   count INT NOT NULL,
+//   window_start TIMESTAMP NOT NULL
+// );
+
+async function isRateLimited(client, ip) {
+  const now = new Date();
+
+  // Lock row for update to avoid race conditions
+  const res = await client.query(
+    'SELECT count, window_start FROM rate_limits WHERE ip = $1 FOR UPDATE',
+    [ip]
+  );
+
+  if (res.rowCount === 0) {
+    // No record, insert new one
+    await client.query(
+      'INSERT INTO rate_limits (ip, count, window_start) VALUES ($1, 1, $2)',
+      [ip, now]
+    );
     return false;
   }
-  
-  const record = rateLimitStore.get(key);
-  
-  // Reset if window has passed
-  if (now > record.resetTime) {
-    rateLimitStore.set(key, {
-      count: 1,
-      resetTime: now + RATE_LIMIT_WINDOW
-    });
+
+  const { count, window_start } = res.rows[0];
+  const windowStartTime = new Date(window_start);
+  const elapsed = now - windowStartTime;
+
+  if (elapsed > RATE_LIMIT_WINDOW_MS) {
+    // Window expired, reset
+    await client.query(
+      'UPDATE rate_limits SET count = 1, window_start = $2 WHERE ip = $1',
+      [ip, now]
+    );
     return false;
   }
-  
-  // Increment count
-  record.count++;
-  
-  // Check if limit exceeded
-  if (record.count > MAX_CLICKS_PER_WINDOW) {
+
+  if (count >= MAX_CLICKS_PER_WINDOW) {
+    // Rate limit exceeded
     return true;
   }
-  
+
+  // Increment count
+  await client.query(
+    'UPDATE rate_limits SET count = count + 1 WHERE ip = $1',
+    [ip]
+  );
+
   return false;
 }
-
-// Clean up old entries every 5 minutes
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, record] of rateLimitStore.entries()) {
-    if (now > record.resetTime) {
-      rateLimitStore.delete(key);
-    }
-  }
-}, 5 * 60 * 1000);
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Only POST allowed' });
   }
 
+  let body = '';
+  for await (const chunk of req) {
+    body += chunk;
+  }
+
+  let username;
   try {
-    // Get client IP
-    const clientIP = getClientIP(req);
-    
-    // Check rate limit
-    if (isRateLimited(clientIP)) {
-      return res.status(429).json({ 
-        error: 'Rate limit exceeded. Please wait before clicking again.',
-        retryAfter: Math.ceil(RATE_LIMIT_WINDOW / 1000) // seconds
+    username = JSON.parse(body).username;
+  } catch {
+    return res.status(400).json({ error: 'Invalid JSON' });
+  }
+
+  if (!username) {
+    return res.status(400).json({ error: 'Username required' });
+  }
+
+  const clientIP = getClientIP(req);
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    if (await isRateLimited(client, clientIP)) {
+      await client.query('ROLLBACK');
+      return res.status(429).json({
+        error: 'fuck off twink'
       });
     }
-
-    // Manually parse body (since Vercel doesn't auto-parse in vanilla handler)
-    let body = '';
-    for await (const chunk of req) {
-      body += chunk;
-    }
-
-    const { username } = JSON.parse(body);
-
-    if (!username) {
-      return res.status(400).json({ error: 'Username required' });
-    }
-
-    const client = await pool.connect();
 
     const result = await client.query(
       `UPDATE users
@@ -109,15 +114,19 @@ export default async function handler(req, res) {
       [username]
     );
 
-    client.release();
-
     if (result.rowCount === 0) {
+      await client.query('ROLLBACK');
       return res.status(404).json({ error: 'User not found' });
     }
 
+    await client.query('COMMIT');
+
     res.status(200).json({ clickCount: result.rows[0].click_count });
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('DB error:', error);
-    res.status(500).json({ error: 'Database error or invalid JSON' });
+    res.status(500).json({ error: 'Database error' });
+  } finally {
+    client.release();
   }
 }

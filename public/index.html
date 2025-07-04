@@ -145,13 +145,19 @@ async function sendClick(username) {
     const res = await fetch('/api/click', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`  // <-- add the token here
       },
-      body: JSON.stringify({ username }) // <- This is essential!
+      body: JSON.stringify({ username }) 
     });
 
     const data = await res.json();
-    console.log('Updated count:', data.clickCount);
+    if (res.ok) {
+      console.log('Updated count:', data.clickCount);
+      userClickCountEl.textContent = data.clickCount;  // Update UI with new count
+    } else {
+      console.error('Click error:', data.error);
+    }
   } catch (err) {
     console.error('Click failed:', err);
   }

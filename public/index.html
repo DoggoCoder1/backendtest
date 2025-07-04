@@ -140,26 +140,22 @@
   }
 
   // --- Click ---
-  async function sendClick() {
-    if (!token) return;
+async function sendClick(username) {
+  try {
+    const res = await fetch('/api/click', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ username }) // <- This is essential!
+    });
 
-    try {
-      const res = await fetch('/api/click', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        userClickCountEl.textContent = data.clickCount;
-        fetchLeaderboard();
-      } else {
-        console.error('Click failed');
-      }
-    } catch (err) {
-      console.error('Click error:', err);
-    }
+    const data = await res.json();
+    console.log('Updated count:', data.clickCount);
+  } catch (err) {
+    console.error('Click failed:', err);
   }
+}
 
   // --- Get user's current count on login ---
 async function getUserClickCount() {

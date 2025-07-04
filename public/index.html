@@ -34,18 +34,15 @@
 
 
 <script>
-  // Persistent user session
   let token = localStorage.getItem('chatToken');
   let currentUsername = localStorage.getItem('chatUsername');
 
-  // DOM references
   const authSection = document.getElementById('authSection');
   const clickerSection = document.getElementById('clickerSection');
   const loggedInUsernameDisplay = document.getElementById('loggedInUsername');
   const userClickCountEl = document.getElementById('userClickCount');
   const leaderboardList = document.getElementById('leaderboardList');
 
-  // --- UI Handling ---
   function updateUI() {
     if (token && currentUsername) {
       authSection.style.display = 'none';

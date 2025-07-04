@@ -8,7 +8,7 @@ const pool = new Pool({
 });
 
 // Secret key for JWTs - IMPORTANT: Store this securely in an environment variable in production!
-const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_jwt_key_please_change_this_in_prod';
+const JWT_SECRET = process.env.JWT_SECRET || 'a222222';
 
 export default async function handler(req, res) {
   let client; // Declare client outside try-catch for finally block access

@@ -102,7 +102,7 @@ export default async function handler(req, res) {
     if (await isRateLimited(client, clientIP)) {
       await client.query('ROLLBACK');
       return res.status(429).json({
-        error: 'Rate limit exceeded. Please wait before clicking again.'
+        error: 'fuck off twink'
       });
     }
 

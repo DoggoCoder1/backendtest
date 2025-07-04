@@ -6,7 +6,7 @@ const pool = new Pool({
 });
 
 const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
-const MAX_CLICKS_PER_WINDOW = 100; // Max clicks per IP per window
+const MAX_CLICKS_PER_WINDOW = 500; // Max clicks per IP per window
 
 function getClientIP(req) {
   const forwarded = req.headers['x-forwarded-for'];
@@ -102,7 +102,7 @@ export default async function handler(req, res) {
     if (await isRateLimited(client, clientIP)) {
       await client.query('ROLLBACK');
       return res.status(429).json({
-        error: 'fuck off twink'
+        error: 'Rate limit exceeded. Please wait before clicking again.'
       });
     }
 

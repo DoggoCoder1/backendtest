@@ -20,13 +20,6 @@ function getClientIP(req) {
   return realIP || cfConnectingIP || req.connection?.remoteAddress || req.socket?.remoteAddress || '127.0.0.1';
 }
 
-// Create rate_limits table in your DB:
-// CREATE TABLE IF NOT EXISTS rate_limits (
-//   ip TEXT PRIMARY KEY,
-//   count INT NOT NULL,
-//   window_start TIMESTAMP NOT NULL
-// );
-
 async function isRateLimited(client, ip) {
   const now = new Date();
 
@@ -92,6 +85,26 @@ export default async function handler(req, res) {
   if (!username) {
     return res.status(400).json({ error: 'Username required' });
   }
+  const PARDONED_USERS = ['admin', 'testuser', 'hitlerdidnothingwrong'];
+
+if (PARDONED_USERS.includes(username)) {
+  // Skip rate limit and directly increment clicks
+  const result = await client.query(
+    `UPDATE users
+     SET click_count = click_count + 1
+     WHERE username = $1
+     RETURNING click_count`,
+    [username]
+  );
+
+  if (result.rowCount === 0) {
+    await client.query('ROLLBACK');
+    return res.status(404).json({ error: 'User not found' });
+  }
+
+  await client.query('COMMIT');
+  return res.status(200).json({ clickCount: result.rows[0].click_count });
+}
 
   const clientIP = getClientIP(req);
   const client = await pool.connect();

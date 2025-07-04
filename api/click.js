@@ -10,12 +10,19 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Only POST allowed' });
   }
 
-  const { username } = req.body;
-  if (!username) {
-    return res.status(400).json({ error: 'Username required' });
-  }
-
   try {
+    // Manually parse body (since Vercel doesn’t auto-parse in vanilla handler)
+    let body = '';
+    for await (const chunk of req) {
+      body += chunk;
+    }
+
+    const { username } = JSON.parse(body);
+
+    if (!username) {
+      return res.status(400).json({ error: 'Username required' });
+    }
+
     const client = await pool.connect();
 
     const result = await client.query(
@@ -35,6 +42,6 @@ export default async function handler(req, res) {
     res.status(200).json({ clickCount: result.rows[0].click_count });
   } catch (error) {
     console.error('DB error:', error);
-    res.status(500).json({ error: 'Database error' });
+    res.status(500).json({ error: 'Database error or invalid JSON' });
   }
 }

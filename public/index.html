@@ -162,19 +162,23 @@
   }
 
   // --- Get user's current count on login ---
-  async function getUserClickCount() {
-    try {
-      const res = await fetch('/api/clicks', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        userClickCountEl.textContent = data.clickCount;
+async function getUserClickCount() {
+  try {
+    const res = await fetch('/api/clicks', {
+      headers: {
+        'X-Username': currentUsername  // Use your variable here
       }
-    } catch (err) {
-      console.error('Fetch click count error:', err);
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      userClickCountEl.textContent = data.clickCount;
     }
+  } catch (err) {
+    console.error('Fetch click count error:', err);
   }
+}
+
 
   // --- Leaderboard ---
   async function fetchLeaderboard() {

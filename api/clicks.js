@@ -1,5 +1,5 @@
+// /api/clicks.js
 import { Pool } from 'pg';
-import { verifyToken } from './auth'; // your JWT verification logic
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -7,39 +7,53 @@ const pool = new Pool({
 });
 
 export default async function handler(req, res) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed, use GET' });
+  if (req.method !== 'GET' && req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const authHeader = req.headers.authorization || '';
-  const token = authHeader.split(' ')[1];
+  const username = req.headers['x-username']; // Pass username via custom header
 
-  if (!token) {
-    return res.status(401).json({ error: 'Authorization token missing' });
-  }
-
-  const user = verifyToken(token);
-  if (!user) {
-    return res.status(401).json({ error: 'Invalid or expired token' });
+  if (!username) {
+    return res.status(400).json({ error: 'Missing username' });
   }
 
   try {
     const client = await pool.connect();
 
-    const result = await client.query(
-      'SELECT click_count FROM users WHERE username = $1',
-      [user.username]
-    );
+    if (req.method === 'POST') {
+      const result = await client.query(
+        `UPDATE users
+         SET click_count = click_count + 1
+         WHERE username = $1
+         RETURNING click_count`,
+        [username]
+      );
 
-    client.release();
+      client.release();
 
-    if (result.rowCount === 0) {
-      return res.status(404).json({ error: 'User not found' });
+      if (result.rowCount === 0) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      return res.status(200).json({ clickCount: result.rows[0].click_count });
     }
 
-    res.status(200).json({ clickCount: result.rows[0].click_count });
-  } catch (error) {
-    console.error('Database error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    if (req.method === 'GET') {
+      const result = await client.query(
+        `SELECT click_count FROM users WHERE username = $1`,
+        [username]
+      );
+
+      client.release();
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      return res.status(200).json({ clickCount: result.rows[0].click_count });
+    }
+  } catch (err) {
+    console.error('Click handler error:', err);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }

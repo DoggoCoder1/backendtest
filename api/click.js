@@ -10,7 +10,7 @@ const rateLimitStore = new Map();
 
 // Rate limiting configuration
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute in milliseconds
-const MAX_CLICKS_PER_WINDOW = 50; // Max clicks per minute per IP
+const MAX_CLICKS_PER_WINDOW = 100; // Max clicks per minute per IP
 
 function getClientIP(req) {
   // Check various headers for the real IP address

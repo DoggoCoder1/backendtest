@@ -6,7 +6,7 @@ const pool = new Pool({
 });
 
 const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
-const MAX_CLICKS_PER_WINDOW = 500; // Max clicks per IP per window
+const MAX_CLICKS_PER_WINDOW = 1000; // Max clicks per IP per window
 
 function getClientIP(req) {
   const forwarded = req.headers['x-forwarded-for'];

@@ -1,4 +1,14 @@
 body {
   background: rgb(20, 20, 20);
   font-family: Inter, sans-serif, monospace;
+  color: white;
+}
+button {
+  background: lime;
+  color: black;
+  font-family: Inter, sans-serif, monospace;
+  border: none;
+  width: 100px;
+  height: 20px;
+  border-radius: 3px;
 }

@@ -33,7 +33,7 @@
 
   <h3>🏆 Top 10 Leaderboard</h3>
   <ol id="leaderboardList"></ol>
-  <button>Buy SigmaOPAutoclicker - trade with willjosh2 on discord</button>
+  <button onclick="buy()">Buy SigmaOPAutoclicker - trade with willjosh2 on discord (one time per session :D)</button>
   </div>
 
 
@@ -46,6 +46,16 @@
   const loggedInUsernameDisplay = document.getElementById('loggedInUsername');
   const userClickCountEl = document.getElementById('userClickCount');
   const leaderboardList = document.getElementById('leaderboardList');
+
+  function buy() {
+    let ret = prompt("enter code to buy sigmaopautoclicker: ");
+    if (ret == "1234") {
+      setInterval()(() => {
+        sendClick(currentUsername);
+      }, 100);
+      alert("bought sigmaopautoclicker! you will now click automatically every 100ms");
+    }
+  }
 
   function updateUI() {
     if (token && currentUsername) {

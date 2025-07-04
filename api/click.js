@@ -1,9 +1,13 @@
 import { Pool } from 'pg';
+import jwt from 'jsonwebtoken';
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
+
+// Put your secret in env variables! This is just example:
+const JWT_SECRET = process.env.JWT_SECRET || 'replace_this_secret';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -11,16 +15,26 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Manually parse body (since Vercel doesn’t auto-parse in vanilla handler)
-    let body = '';
-    for await (const chunk of req) {
-      body += chunk;
+    // Read token from Authorization header: "Bearer <token>"
+    const authHeader = req.headers.authorization || '';
+    const token = authHeader.split(' ')[1]; // get token part
+
+    if (!token) {
+      return res.status(401).json({ error: 'Missing token' });
     }
 
-    const { username } = JSON.parse(body);
+    // Verify JWT
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch {
+      return res.status(401).json({ error: 'Invalid or expired token' });
+    }
 
+    // Get username from decoded token payload
+    const username = decoded.username;
     if (!username) {
-      return res.status(400).json({ error: 'Username required' });
+      return res.status(401).json({ error: 'Invalid token payload' });
     }
 
     const client = await pool.connect();

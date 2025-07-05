@@ -173,7 +173,6 @@ async function getUserClickCount() {
 
     if (res.ok) {
       const data = await res.json();
-      userClickCountEl.textContent = data.clickCount;
       clientClicks = data.clickCount; // Update clientClicks with the fetched count
     }
   } catch (err) {

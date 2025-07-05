@@ -42,13 +42,14 @@
 <script>
   let token = localStorage.getItem('chatToken');
   let currentUsername = localStorage.getItem('chatUsername');
+  let clientClicks = 0;
 
   const authSection = document.getElementById('authSection');
   const clickerSection = document.getElementById('clickerSection');
   const loggedInUsernameDisplay = document.getElementById('loggedInUsername');
   const userClickCountEl = document.getElementById('userClickCount');
   const leaderboardList = document.getElementById('leaderboardList');
-
+  setInterval(clientRender, 10);
   function updateUI() {
     if (token && currentUsername) {
       authSection.style.display = 'none';
@@ -144,6 +145,8 @@
 
   // --- Click ---
 async function sendClick(username) {
+  clientClicks++;
+  userClickCountEl.textContent = clientClicks;
   try {
     const res = await fetch('/api/click', {
       method: 'POST',
@@ -171,7 +174,7 @@ async function getUserClickCount() {
 
     if (res.ok) {
       const data = await res.json();
-      userClickCountEl.textContent = data.clickCount;
+      clientClicks = data.clickCount || 0; // Default to 0 if not found
     }
   } catch (err) {
     console.error('Fetch click count error:', err);

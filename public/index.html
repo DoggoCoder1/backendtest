@@ -42,6 +42,7 @@
 <script>
   let token = localStorage.getItem('chatToken');
   let currentUsername = localStorage.getItem('chatUsername');
+  let clientClicks = 0;
 
   const authSection = document.getElementById('authSection');
   const clickerSection = document.getElementById('clickerSection');
@@ -144,6 +145,7 @@
 
   // --- Click ---
 async function sendClick(username) {
+  clientClicks++;
   try {
     const res = await fetch('/api/click', {
       method: 'POST',

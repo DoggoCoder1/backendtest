@@ -47,7 +47,7 @@
   const authSection = document.getElementById('authSection');
   const clickerSection = document.getElementById('clickerSection');
   const loggedInUsernameDisplay = document.getElementById('loggedInUsername');
-  const userClickCountEl = document.getElementById('userClickCount');
+  const clickDisplay = document.getElementById('userClickCount');
   const leaderboardList = document.getElementById('leaderboardList');
 
   function updateUI() {
@@ -145,6 +145,7 @@
   // --- Click ---
 async function sendClick(username) {
   clientClicks++;
+  clickDisplay.textContent = clientClicks; // Update the displayed click count immediately
   try {
     const res = await fetch('/api/click', {
       method: 'POST',

@@ -96,7 +96,7 @@ export default async function handler(req, res) {
     if (await isRateLimited(client, clientIP)) {
       await client.query('ROLLBACK');
       return res.status(429).json({
-        error: 'fuck off twink'
+        error: 'slow down stop spamming my db'
       });
     }
 

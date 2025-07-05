@@ -4,13 +4,21 @@ body {
   color: white;
 }
 button {
-  background: lime;
-  color: black;
+  background: linear-gradient(90deg, #4caf50 0%, #8bc34a 100%);
+  color: #fff;
   font-family: Inter, sans-serif, monospace;
   border: none;
-  width: fit-content;
-  height: 20px;
-  border-radius: 3px;
+  padding: 8px 20px;
+  font-size: 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.15);
+  transition: background 0.2s, transform 0.1s;
+}
+
+button:hover {
+  background: linear-gradient(90deg, #388e3c 0%, #689f38 100%);
+  transform: translateY(-2px) scale(1.03);
 }
 #logout {
   background-color: red;

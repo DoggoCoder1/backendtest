@@ -10,6 +10,7 @@
 <body>
   <div id="authSection">
     <h1 style="color: red;">DISCLAIMER: Usernames are not filtered.</h1>
+    <p>If you have any intellect at all then you would NOT use your gmail or real name (thank you)</p>
     <h2>Register</h2>
     <input id="registerUsername" placeholder="Username" type="text">
     <input id="registerPassword" placeholder="Password" type="password">
@@ -24,17 +25,14 @@
   </div>
 
   <div id="clickerSection" style="display:none;">
-  <h1>cool clicking game</h1>
   <button onclick="logout()" id="logout">Logout</button>
-  <p>pls no cheat</p>
   <p>Logged in as: <strong id="loggedInUsername"></strong></p>
   <h3>Your Clicks: <span id="userClickCount">0</span></h3>
   <button onclick="sendClick(currentUsername)">Click Me!</button>
 
   <h3>🏆 Top 10 Leaderboard</h3>
   <ol id="leaderboardList"></ol>
-  <button onclick="buy()">Buy SigmaOPAutoclicker - trade with willjosh2 on discord (one time per session :D)</button>
-  <h1>advertisementmtments</h1>
+  <h1>'advertisements'</h1>
   <div id="ad">Need free robux??????????? <a href="https://xbux4pro.vercel.app">https://xbux4pro.vercel.app</a></div>
   <div id="ad"><img src="chees.png"></div>
   <div id="ad" class="rainbow"><h1>disassembled is stinky.</h1></div>
@@ -50,16 +48,6 @@
   const loggedInUsernameDisplay = document.getElementById('loggedInUsername');
   const userClickCountEl = document.getElementById('userClickCount');
   const leaderboardList = document.getElementById('leaderboardList');
-
-  function buy() {
-    let ret = prompt("enter code to buy sigmaopautoclicker: ");
-    if (ret == "1234") {
-      setInterval(() => {
-        sendClick(currentUsername);
-      }, 100);
-      alert("bought sigmaopautoclicker! you will now click automatically every 100ms");
-    }
-  }
 
   function updateUI() {
     if (token && currentUsername) {

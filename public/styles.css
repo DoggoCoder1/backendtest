@@ -28,18 +28,26 @@ button {
   font-size: 1rem;
 }
 .rainbow {
-  background: linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet);
-  background-size: 400% 100%;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
   animation: rainbow 5s linear infinite;
 }
 
 @keyframes rainbow {
   0% {
-    background-position: 0% 50%;
+    color: red;
+  }
+  20% {
+    color: rgb(255, 162, 0);
+  }
+  40% {
+    color: rgb(225, 255, 0);
+  }
+  60% {
+    color: rgb(0, 255, 115);
+  }
+  80% {
+    color: rgb(0, 89, 255);
   }
   100% {
-    background-position: 100% 50%;
+    color: rgb(187, 0, 255);
   }
 }

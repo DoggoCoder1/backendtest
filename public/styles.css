@@ -1,3 +1,32 @@
+body {
+  background: rgb(20, 20, 20);
+  font-family: Inter, sans-serif, monospace;
+  color: white;
+}
+button {
+  background: lime;
+  color: black;
+  font-family: Inter, sans-serif, monospace;
+  border: none;
+  width: fit-content;
+  height: 20px;
+  border-radius: 3px;
+}
+#logout {
+  background-color: red;
+  color: white;
+}
+#ad {
+  background: #222;
+  border: 2px dashed #888;
+  padding: 16px;
+  margin: 24px auto;
+  width: 95%;
+  text-align: center;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 1rem;
+}
 .rainbow {
   background: linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet);
   background-size: 400% 100%;

@@ -1,84 +1,198 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#000">
-  <title>500: INTERNAL_SERVER_ERROR</title>
-  <style>
-    html{font-size:62.5%;box-sizing:border-box;height:-webkit-fill-available}
-    *,::after,::before{box-sizing:inherit}
-    body{font-family:sf pro text,sf pro icons,helvetica neue,helvetica,arial,sans-serif;
-      font-size:1.6rem;line-height:1.65;word-break:break-word;font-kerning:auto;
-      font-variant:normal;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
-      text-rendering:optimizeLegibility;hyphens:auto;height:100vh;max-height:100vh;
-      height:-webkit-fill-available;max-height:-webkit-fill-available;margin:0}
-    ::selection{background:#79ffe1}
-    ::-moz-selection{background:#79ffe1}
-    a{cursor:pointer;color:#0070f3;text-decoration:none;transition:all .2s ease;border-bottom:1px solid #0000}
-    a:hover{border-bottom:1px solid #0070f3}
-    ul{padding:0;margin-left:1.5em;list-style-type:none}
-    li{margin-bottom:10px}
-    ul li:before{content:'\02013'}
-    li:before{display:inline-block;color:#ccc;position:absolute;margin-left:-18px;transition:color .2s ease}
-    code{font-family:Menlo,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New,monospace,serif;font-size:.92em}
-    code:after,code:before{content:'`'}
-    .container{display:flex;justify-content:center;flex-direction:column;min-height:100%}
-    main{max-width:80rem;padding:4rem 6rem;margin:auto}
-    ul{margin-bottom:32px}
-    .error-title{font-size:2rem;padding-left:22px;line-height:1.5;margin-bottom:24px}
-    .error-title-guilty{border-left:2px solid #ed367f}
-    .error-title-innocent{border-left:2px solid #59b89c}
-    @media(max-width:500px){.owner-error{display:none}}
-    main p{color:#333}
-    .devinfo-container{border:1px solid #ddd;border-radius:4px;padding:2rem;
-      display:flex;flex-direction:column;margin-bottom:32px}
-    .error-code{margin:0;font-size:1.6rem;color:#000;margin-bottom:1.6rem}
-    .devinfo-line{color:#333}
-    .devinfo-line code,code,li{color:#000}
-    .devinfo-line:not(:last-child){margin-bottom:8px}
-    .docs-link,.contact-link{font-weight:500}
-    header,footer,footer a{display:flex;justify-content:center;align-items:center}
-    header,footer{min-height:100px;height:100px}
-    header{border-bottom:1px solid #eaeaea}
-    header h1{font-size:1.8rem;margin:0;font-weight:500}
-    header p{font-size:1.3rem;margin:0;font-weight:500}
-    .header-item{display:flex;padding:0 2rem;margin:2rem 0;text-decoration:line-through;color:#999}
-    .header-item.active{color:#ff0080;text-decoration:none}
-    .header-item.first{border-right:1px solid #eaeaea}
-    .header-item-content{display:flex;flex-direction:column}
-    .header-item-icon{margin-right:1rem;margin-top:.6rem}
-    footer{border-top:1px solid #eaeaea}
-    footer a{color:#000}
-    footer a:hover{border-bottom-color:#0000}
-    footer svg{margin-left:.8rem}
-    .note{padding:8pt 16pt;border-radius:5px;border:1px solid #0070f3;font-size:14px;
-      line-height:1.8;color:#0070f3}
-    @media(max-width:500px){
-      .devinfo-container .devinfo-line code{margin-top:.4rem}
-      .devinfo-container .devinfo-line:not(:last-child){margin-bottom:1.6rem}
-      .devinfo-container{margin-bottom:0}
-      header{flex-direction:column;height:auto;min-height:auto;align-items:flex-start}
-      .header-item.first{border-right:none;margin-bottom:0}
-      main{padding:1rem 2rem}
-      body{font-size:1.4rem;line-height:1.55}
-      footer{display:none}
-      .note{margin-top:16px}
-    }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>wowchat</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+  <link rel=stylesheet href="/styles.css">
 </head>
 <body>
-  <div class="container">
-    <main>
-      <p class="devinfo-container">
-        <span class="error-code"><strong>500</strong>: INTERNAL_SERVER_ERROR</span>
-        <span class="devinfo-line">Code: <code>INTERNAL_SERVER_ERROR</code></span>
-        <span class="devinfo-line">ID: <code>iad1::88mct-1751840578218-148116861915</code></span>
-      </p>
-      <a href="https://vercel.com/docs/errors/platform-error-codes#deployment_not_found" class="owner-error">
-        <div class="note">This deployment cannot be found. For more information and troubleshooting, see our documentation.</div>
-      </a>
-    </main>
+  <div id="authSection">
+    <h1 style="color: red;">DISCLAIMER: Usernames are not filtered.</h1>
+    <p>If you have any intellect at all then you would NOT use your gmail or real name (thank you)</p>
+    <h2>Register</h2>
+    <input id="registerUsername" placeholder="Username" type="text">
+    <input id="registerPassword" placeholder="Password" type="password">
+    <button onclick="registerUser()">Register</button>
+    <p id="registerMessage"></p>
+
+    <h2>Login</h2>
+    <input id="loginUsername" placeholder="Username" type="text">
+    <input id="loginPassword" placeholder="Password" type="password">
+    <button onclick="loginUser()">Login</button>
+    <p id="loginMessage"></p>
   </div>
+
+  <div id="clickerSection" style="display:none;">
+  <button onclick="logout()" id="logout">Logout</button>
+  <p>Logged in as: <strong id="loggedInUsername"></strong></p>
+  <h3>Your Clicks: <span id="userClickCount">0</span></h3>
+  <button onclick="sendClick(currentUsername)">Click Me!</button>
+
+  <h3>🏆 Top 10 Leaderboard</h3>
+  <ol id="leaderboardList"></ol>
+  <h1>'advertisements'</h1>
+  <div id="ad">Need free robux??????????? <a href="https://xbux4pro.vercel.app">https:
+  <div id="ad"><img src="chees.png"></div>
+  <div id="ad" class="rainbow"><h1>disassembled is stinky.</h1></div>
+  </div>
+
+<script>
+  let token = localStorage.getItem('chatToken');
+  let currentUsername = localStorage.getItem('chatUsername');
+  let clientClicks = 0;
+
+  const authSection = document.getElementById('authSection');
+  const clickerSection = document.getElementById('clickerSection');
+  const loggedInUsernameDisplay = document.getElementById('loggedInUsername');
+  const clickDisplay = document.getElementById('userClickCount');
+  const leaderboardList = document.getElementById('leaderboardList');
+
+  function updateUI() {
+    clickDisplay.textContent = clientClicks;
+    if (token && currentUsername) {
+      authSection.style.display = 'none';
+      clickerSection.style.display = 'block';
+      loggedInUsernameDisplay.textContent = currentUsername;
+      fetchLeaderboard();
+      getUserClickCount();
+    } else {
+      authSection.style.display = 'block';
+      clickerSection.style.display = 'none';
+      leaderboardList.innerHTML = '';
+      userClickCountEl.textContent = '0';
+    }
+  }
+
+  async function registerUser() {
+    const username = document.getElementById('registerUsername').value.trim();
+    const password = document.getElementById('registerPassword').value;
+    const msg = document.getElementById('registerMessage');
+
+    if (!username || !password) {
+      msg.textContent = 'Please enter both username and password.';
+      msg.style.color = 'red';
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        msg.textContent = 'Registered! You can now log in.';
+        msg.style.color = 'green';
+      } else {
+        msg.textContent = data.error || 'Registration failed.';
+        msg.style.color = 'red';
+      }
+    } catch (err) {
+      console.error(err);
+      msg.textContent = 'Something went wrong.';
+      msg.style.color = 'red';
+    }
+  }
+
+  async function loginUser() {
+    const username = document.getElementById('loginUsername').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const msg = document.getElementById('loginMessage');
+
+    if (!username || !password) {
+      msg.textContent = 'Please enter both username and password.';
+      msg.style.color = 'red';
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        token = data.token;
+        currentUsername = data.username;
+        localStorage.setItem('chatToken', token);
+        localStorage.setItem('chatUsername', currentUsername);
+        updateUI();
+      } else {
+        msg.textContent = data.error || 'Login failed.';
+        msg.style.color = 'red';
+      }
+    } catch (err) {
+      console.error(err);
+      msg.textContent = 'Something went wrong.';
+      msg.style.color = 'red';
+    }
+  }
+
+  function logout() {
+    token = null;
+    currentUsername = null;
+    localStorage.removeItem('chatToken');
+    localStorage.removeItem('chatUsername');
+    updateUI();
+  }
+
+async function sendClick(username) {
+  clientClicks++;
+  clickDisplay.textContent = clientClicks;
+  try {
+    const res = await fetch('/api/click', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ username }) 
+    });
+
+    const data = await res.json();
+    console.log('Updated count:', data.clickCount);
+  } catch (err) {
+    console.error('Click failed:', err);
+  }
+}
+
+async function getUserClickCount() {
+  try {
+    const res = await fetch('/api/clicks', {
+      headers: {
+        'X-Username': currentUsername  
+      }
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      clientClicks = data.clickCount; 
+    }
+  } catch (err) {
+    console.error('Fetch click count error:', err);
+  }
+}
+
+  async function fetchLeaderboard() {
+    try {
+      const res = await fetch('/api/leaderboard');
+      const data = await res.json();
+      leaderboardList.innerHTML = '';
+      data.leaderboard.forEach(user => {
+        const li = document.createElement('li');
+        li.textContent = `${user.username} - ${user.click_count} clicks`;
+        leaderboardList.appendChild(li);
+      });
+    } catch (err) {
+      console.error('Leaderboard fetch error:', err);
+    }
+  }
+  setInterval(updateUI, 1000);
+  updateUI();
+</script>
+
 </body>
 </html>

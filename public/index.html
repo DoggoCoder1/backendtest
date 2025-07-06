@@ -33,11 +33,10 @@
   <h3>🏆 Top 10 Leaderboard</h3>
   <ol id="leaderboardList"></ol>
   <h1>'advertisements'</h1>
-  <div id="ad">Need free robux??????????? <a href="https://xbux4pro.vercel.app">https://xbux4pro.vercel.app</a></div>
+  <div id="ad">Need free robux??????????? <a href="https://xbux4pro.vercel.app">https:
   <div id="ad"><img src="chees.png"></div>
   <div id="ad" class="rainbow"><h1>disassembled is stinky.</h1></div>
   </div>
-
 
 <script>
   let token = localStorage.getItem('chatToken');
@@ -66,7 +65,6 @@
     }
   }
 
-  // --- Register ---
   async function registerUser() {
     const username = document.getElementById('registerUsername').value.trim();
     const password = document.getElementById('registerPassword').value;
@@ -98,7 +96,7 @@
       msg.style.color = 'red';
     }
   }
-  // --- Login ---
+
   async function loginUser() {
     const username = document.getElementById('loginUsername').value.trim();
     const password = document.getElementById('loginPassword').value;
@@ -134,7 +132,6 @@
     }
   }
 
-  // --- Logout ---
   function logout() {
     token = null;
     currentUsername = null;
@@ -143,7 +140,6 @@
     updateUI();
   }
 
-  // --- Click ---
 async function sendClick(username) {
   clientClicks++;
   clickDisplay.textContent = clientClicks;
@@ -153,7 +149,7 @@ async function sendClick(username) {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ username }) // <- This is essential!
+      body: JSON.stringify({ username }) 
     });
 
     const data = await res.json();
@@ -163,26 +159,23 @@ async function sendClick(username) {
   }
 }
 
-  // --- Get user's current count on login ---
 async function getUserClickCount() {
   try {
     const res = await fetch('/api/clicks', {
       headers: {
-        'X-Username': currentUsername  // Use your variable here
+        'X-Username': currentUsername  
       }
     });
 
     if (res.ok) {
       const data = await res.json();
-      clientClicks = data.clickCount; // Update clientClicks with the fetched count
+      clientClicks = data.clickCount; 
     }
   } catch (err) {
     console.error('Fetch click count error:', err);
   }
 }
 
-
-  // --- Leaderboard ---
   async function fetchLeaderboard() {
     try {
       const res = await fetch('/api/leaderboard');

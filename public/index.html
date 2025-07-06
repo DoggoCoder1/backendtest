@@ -51,6 +51,7 @@
   const leaderboardList = document.getElementById('leaderboardList');
 
   function updateUI() {
+    clickDisplay.textContent = clientClicks;
     if (token && currentUsername) {
       authSection.style.display = 'none';
       clickerSection.style.display = 'block';
@@ -145,7 +146,7 @@
   // --- Click ---
 async function sendClick(username) {
   clientClicks++;
-  clickDisplay.textContent = clientClicks; // Update the displayed click count immediately
+  clickDisplay.textContent = clientClicks;
   try {
     const res = await fetch('/api/click', {
       method: 'POST',
@@ -196,8 +197,6 @@ async function getUserClickCount() {
       console.error('Leaderboard fetch error:', err);
     }
   }
-
-  // --- Init ---
   setInterval(updateUI, 1000);
   updateUI();
 </script>

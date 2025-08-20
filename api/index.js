@@ -1,26 +1,44 @@
+// api/index.js
+
 const express = require('express');
 const app = express();
 
-app.use(express.json()); // This is crucial for parsing JSON data from the request body
+// Middleware to parse incoming JSON data. This MUST be at the top.
+app.use(express.json());
 
-// This is the correct route handler for a POST request to your Vercel API endpoint
+// This is the POST route that will handle requests from your HTML page.
+// The route path is '/', because Vercel routes requests from /api to this file's root.
 app.post('/', (req, res) => {
-    // Access the data sent from the client
-    const clientData = req.body;
-    
-    console.log('Received POST request with data:', clientData);
+  try {
+    const dataFromClient = req.body;
 
-    // Send a JSON response back to the client
-    res.status(200).json({ 
-        success: true, 
-        message: 'Data received successfully!',
-        data: clientData
-    });
+    // Check if the request body is empty or not as expected
+    if (!dataFromClient || Object.keys(dataFromClient).length === 0) {
+      return res.status(400).json({ error: "No data received in the request body." });
+    }
+
+    // Log the received data for debugging
+    console.log('Received POST request with data:', dataFromClient);
+
+    // Send a success response back to the client
+    const responseData = {
+      message: "Data received successfully!",
+      receivedData: dataFromClient,
+      timestamp: new Date().toISOString()
+    };
+
+    res.status(200).json(responseData);
+
+  } catch (error) {
+    console.error('An error occurred:', error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 });
 
-// A simple GET route is good for testing in your browser
+// A GET route to test if the API is running correctly via the browser.
 app.get('/', (req, res) => {
-    res.status(200).json({ message: 'API is alive!' });
+  res.status(200).json({ message: "API is alive and ready to receive POST requests!" });
 });
 
+// This is necessary to expose your app as a serverless function on Vercel.
 module.exports = app;

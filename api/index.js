@@ -1,20 +1,26 @@
 const express = require('express');
 const app = express();
 
-app.use(express.json());
+app.use(express.json()); // This is crucial for parsing JSON data from the request body
 
-// Handle POST requests to the /api endpoint
+// This is the correct route handler for a POST request to your Vercel API endpoint
 app.post('/', (req, res) => {
-    // This route is for your form/JavaScript to send data
+    // Access the data sent from the client
     const clientData = req.body;
+    
     console.log('Received POST request with data:', clientData);
-    res.status(200).json({ received: true, data: clientData });
+
+    // Send a JSON response back to the client
+    res.status(200).json({ 
+        success: true, 
+        message: 'Data received successfully!',
+        data: clientData
+    });
 });
 
-// Handle GET requests to the /api endpoint
+// A simple GET route is good for testing in your browser
 app.get('/', (req, res) => {
-    // This route is so you can test the URL in your browser
-    res.status(200).json({ message: 'API is running successfully!' });
+    res.status(200).json({ message: 'API is alive!' });
 });
 
 module.exports = app;

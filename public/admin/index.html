@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Administrator</title>
+    </head>
+    <body>
+        <p id="verify"></p>
+        <script>
+            const verify = document.getElementById("verify");
+            
+            // Define the data you want to send in the POST request
+            const dataToSend = {
+                username: "admin",
+                action: "verify"
+            };
+            const sendPostRequest = async () => {
+                try {
+                    const response = await fetch("/api", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(dataToSend)
+                    });
+
+                    // Check if the response was successful (status code 200-299)
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+
+                    // Parse the JSON response from the server
+                    const result = await response.json();
+                    
+                    // Log the successful response and update the HTML
+                    console.log('Success! Response from server:', result);
+                    verify.textContent = `Verification Result: ${JSON.stringify(result)}`;
+
+                } catch (error) {
+                    // Handle any errors that occur during the request
+                    console.error('Error making POST request:', error);
+                    verify.textContent = `Error: ${error.message}`;
+                }
+            };
+            
+            // Call the async function to execute the fetch request
+            sendPostRequest();
+        </script>
+    </body>
+</html>

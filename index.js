@@ -1,30 +1,20 @@
 const express = require('express');
 const app = express();
 
-// Middleware to parse incoming JSON data
 app.use(express.json());
 
-// The handler for the POST request
-app.post('/api', (req, res) => {
-  // Access the data sent from the client
-  const clientData = req.body;
-  
-  console.log('Received POST request with data:', clientData);
-
-  // Create a response object
-  const serverResponse = {
-    received: true,
-    data: clientData,
-    processedAt: new Date().toISOString()
-  };
-
-  // Send the JSON response back to the client
-  res.status(200).json(serverResponse);
+// Handle POST requests to the /api endpoint
+app.post('/', (req, res) => {
+    // This route is for your form/JavaScript to send data
+    const clientData = req.body;
+    console.log('Received POST request with data:', clientData);
+    res.status(200).json({ received: true, data: clientData });
 });
 
-// A simple GET route for testing purposes
-app.get('/api', (req, res) => {
-  res.status(200).json({ message: 'API is running!' });
+// Handle GET requests to the /api endpoint
+app.get('/', (req, res) => {
+    // This route is so you can test the URL in your browser
+    res.status(200).json({ message: 'API is running successfully!' });
 });
 
 module.exports = app;

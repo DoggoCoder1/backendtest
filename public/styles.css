@@ -2,7 +2,7 @@ body {
   background: #141414;
   font-family: Inter, system-ui, sans-serif;
   color: #f5f5f5;
-  margin: 0;
+  margin: 10px;
   padding: 0;
   line-height: 1.6;
 }
@@ -45,7 +45,7 @@ button:active {
 /* Ad / Info Card */
 #ad {
   background: #1e1e1e;
-  border: 2px dashed #666;
+  border: none;
   padding: 20px;
   margin: 32px auto;
   width: 92%;

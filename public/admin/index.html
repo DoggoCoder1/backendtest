@@ -7,6 +7,19 @@
 </head>
 <body>
     <h1>Admin</h1>
-    <button>Delete All Accounts</button>
+    <button onclick="resetClicks()">reset</button>
+    <script>
+        async function resetClicks() {
+            const res = await fetch("/api/admin/reset-clicks", {
+                method: "POST",
+                headers: {
+                "x-admin-token": "1234"
+                }
+            });
+
+            const data = await res.json();
+            console.log(data);
+        }
+    </script>
 </body>
 </html>

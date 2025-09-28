@@ -10,7 +10,7 @@
     <button onclick="resetClicks()">reset</button>
     <script>
         async function resetClicks() {
-            const res = await fetch("/api/admin/reset-clicks", {
+            const res = await fetch("/api/reset", {
                 method: "POST",
                 headers: {
                 "x-admin-token": "1234"

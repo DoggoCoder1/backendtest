@@ -152,7 +152,6 @@ async function sendClick(username) {
     });
 
     const data = await res.json();
-    console.log('Updated count:', data.clickCount);
   } catch (err) {
     console.error('Click failed:', err);
   }

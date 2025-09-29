@@ -6,20 +6,6 @@
     <title>Admin</title>
 </head>
 <body>
-    <h1>Admin</h1>
-    <button onclick="resetClicks()">reset everyones clicks (epik troll)</button>
-    <script>
-        async function resetClicks() {
-            const res = await fetch("/api/reset", {
-                method: "POST",
-                headers: {
-                "x-admin-token": "1234"
-                }
-            });
-
-            const data = await res.json();
-            console.log(data);
-        }
-    </script>
+    <h1>You do not have access to this page!</h1>
 </body>
 </html>

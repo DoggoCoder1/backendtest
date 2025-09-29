@@ -4,7 +4,7 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 const stringSimilarity = require('string-similarity');
-const forbidden = ['fuck', 'boobs', 'shit'];
+const forbidden = ['fuck', 'boobs', 'shit', 'femboy', 'twat', 'dick', 'penis', 'titties', 'jerking', 'cum', 'pee', 'urine', 'hitler', 'sperm'];
 
 function isForbidden(username) {
   const normalized = username.toLowerCase().replace(/[0134@$]/g, c => ({'0':'o','1':'i','3':'e','4':'a','@':'a','$':'s'})[c]||c);

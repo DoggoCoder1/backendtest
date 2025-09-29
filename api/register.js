@@ -1,15 +1,73 @@
 import { Pool } from 'pg';
+import { google } from 'googleapis';
+const API_KEY = process.env.PERSPECTIVE_API_KEY; 
+
+const perspective = google.commentanalyzer({
+  version: 'v1alpha1',
+  auth: API_KEY, // Use the API Key for authorization
+});
+
+/**
+ * Analyzes a username for toxicity using the Perspective API.
+ * @param {string} username The username to analyze.
+ * @returns {Promise<boolean>} True if the username is flagged as toxic, false otherwise.
+ */
+export async function isUsernameToxic(username) {
+  if (!API_KEY) {
+      console.warn("Perspective API Key is missing. Skipping AI check.");
+      return false; // Fail safe: if key is missing, allow username.
+  }
+
+  const request = {
+    // The username is treated as the 'comment'
+    comment: { text: username }, 
+    
+    // Request scores for specific attributes
+    requestedAttributes: {
+      'TOXICITY': {},
+      'THREAT': {},
+      'INSULT': {}
+    },
+    
+    // Recommended to provide a session ID (e.g., the user's IP or a random ID)
+    clientToken: `username-check-${Date.now()}`,
+  };
+
+  try {
+    const response = await perspective.comments.analyze({ resource: request });
+    
+    const attributeScores = response.data.attributeScores;
+    
+    // DEFINE YOUR THRESHOLD: A score above this value will be flagged. 
+    // Perspective scores range from 0 (non-toxic) to 1 (highly toxic). 
+    // 0.7 is a common starting point for a strict filter.
+    const TOXICITY_THRESHOLD = 0.7; 
+
+    // Check the score for the highest-priority attribute (Toxicity)
+    const toxicityScore = attributeScores.TOXICITY?.summaryScore?.value || 0;
+    const isToxic = toxicityScore >= TOXICITY_THRESHOLD;
+
+    if (isToxic) {
+        console.log(`Username "${username}" flagged with Toxicity score: ${toxicityScore}`);
+        return true;
+    }
+    
+    // You could also check other attributes like THREAT or INSULT here if needed
+
+    return false;
+
+  } catch (error) {
+    console.error('Perspective API Error:', error.message);
+    // CRITICAL: Fail safe. If the API service is down or you hit a rate limit,
+    // you should decide whether to block the registration (strict) or allow it (lenient).
+    // Allowing it prevents a service outage from stopping user registration.
+    return false; 
+  }
+}
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
-const stringSimilarity = require('string-similarity');
-const forbidden = ['fuck', 'boobs', 'shit', 'femboy', 'twat', 'dick', 'penis', 'titties', 'jerking', 'cum', 'pee', 'urine', 'hitler', 'sperm'];
-
-function isForbidden(username) {
-  const normalized = username.toLowerCase().replace(/[0134@$]/g, c => ({'0':'o','1':'i','3':'e','4':'a','@':'a','$':'s'})[c]||c);
-  return forbidden.some(word => stringSimilarity.compareTwoStrings(normalized, word) > 0.8);
-}
 
 export default async function handler(req, res) {
   let client;
@@ -29,8 +87,6 @@ export default async function handler(req, res) {
     }
 
     try {
-      // WARNING: Storing passwords in plain text is highly discouraged for sensitive applications.
-      // This is done based on your explicit request to remove password hashing.
       await client.query('INSERT INTO users (username, password_hash) VALUES ($1, $2)', [username, password]);
 
       return res.status(201).json({ message: 'User registered successfully.' });

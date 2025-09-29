@@ -1,16 +1,9 @@
 import { Pool } from 'pg';
 const { google } = require('googleapis'); 
-
 //AIzaSyBMqi0uWM-3eunUqCFNgPwk4ypTPOMEPug
-
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
-});
-
-const perspective = google.commentanalyzer({
-  version: 'v1alpha1',
-  auth: process.env.PERSPECTIVE_, 
 });
 
 export default async function handler(req, res) {

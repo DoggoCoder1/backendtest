@@ -6,7 +6,19 @@
     <title>Admin</title>
 </head>
 <body>
-    <h1>nice try</h1>
-    <img src="admin/dog.png">
+    <button onclick="clicked()">Click to verify.</button>
+    <div style="display: none;" id="troll">
+        <h1>nice try</h1>
+        <img src="admin/dog.png">
+    </div>
+
+    <script>
+        const audio = new Audio("admin/meow.mp3");
+        function clicked() {
+            document.getElementById("troll").style.display = "block";
+            audio.play();
+        }
+    </script>
+
 </body>
 </html>

@@ -1,24 +1,22 @@
-import { Pool } from 'pg'; // Included for context, but not used in the test function
-const { google } = require('googleapis'); 
+import { Pool } from 'pg'; 
+const axios = require('axios'); // 👈 NEW: Import axios for HTTP requests
 
 // Set the API Key variable from your environment
-// NOTE: I'm using your custom name PERSPECTIVE_ 
-// You MUST ensure your environment variable is set as PERSPECTIVE_ in Vercel.
 const API_KEY = process.env.PERSPECTIVE_; 
+
+// Define the API endpoint
+const PERSPECTIVE_URL = 'https://commentanalyzer.googleapis.com/v1alpha1/comments:analyze';
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
 
-// Initialize the Perspective client
-const perspective = google.commentanalyzer({
-  version: 'v1alpha1',
-  auth: API_KEY, 
-});
+// NOTE: The 'perspective' client initialization is removed:
+// const perspective = google.commentanalyzer({...});
 
 /**
- * Analyzes a text string and logs the toxicity and threat scores.
+ * Analyzes a text string and logs the toxicity and threat scores using a direct HTTP request.
  * @param {string} text The string to analyze.
  */
 async function analyze(text) {
@@ -27,18 +25,23 @@ async function analyze(text) {
       return;
   }
 
-  const request = {
+  const requestBody = {
     comment: { text: text }, 
     requestedAttributes: {
       'TOXICITY': {}, // Request the Toxicity score
       'THREAT': {}     // Request the Threat score
     },
-    clientToken: `test-check-${Date.now()}`,
+    // The clientToken is optional
+    // clientToken: `test-check-${Date.now()}`, 
+    // You can also add the 'doNotStore' flag for privacy:
+    doNotStore: true, 
   };
 
   try {
-    // 1. AWAIT the asynchronous API call
-    const response = await perspective.comments.analyze({ resource: request });
+    // 1. Make a direct POST request to the API endpoint
+    const url = `${PERSPECTIVE_URL}?key=${API_KEY}`;
+    
+    const response = await axios.post(url, requestBody);
     
     const attributeScores = response.data.attributeScores;
     
@@ -48,13 +51,18 @@ async function analyze(text) {
 
     // 3. Console.log the result
     console.log(`--- Analysis for: "${text}" ---`);
-    console.log(`TOXICITY Score: ${toxicityScore}`); // Expect this to be high (close to 1.0)
-    console.log(`THREAT Score: ${threatScore}`);     // Expect this to be high as well
+    // The score is a probability from 0 to 1.0
+    console.log(`TOXICITY Score: ${toxicityScore}`); 
+    console.log(`THREAT Score: ${threatScore}`);     
     console.log("-------------------------------------");
 
   } catch (error) {
-    console.error('Perspective API Error:', error.message);
-    // If you see a 403 Forbidden error here, the API key is incorrect or restricted.
+    // Log a specific error if it's an Axios error
+    if (error.response) {
+      console.error('Perspective API HTTP Error:', error.response.status, error.response.data);
+    } else {
+      console.error('Perspective API Error:', error.message);
+    }
   }
 }
 
@@ -63,8 +71,5 @@ export default async function handler(req, res) {
   // Use the analyze function here
   await analyze("I hate you I hope you die");
   
-  // You can run other checks if needed
-  // await analyze("I like your hat");
-
   res.status(200).json({ message: 'Perspective API test complete. Check Vercel logs for scores.' });
 }

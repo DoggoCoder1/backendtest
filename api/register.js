@@ -3,10 +3,12 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
-const forbiddenWords = ['twat', 'femboy', 'fuck', 'shit', 'titties', 'titty', 'tit', 'boobs', 'nigger', 'nigga', 'fem', 'penis', 'dick'];
-function containsForbidden(username) {
-  const lower = username.toLowerCase();
-  return forbiddenWords.some(word => lower.includes(word));
+const stringSimilarity = require('string-similarity');
+const forbidden = ['fuck', 'boobs', 'shit'];
+
+function isForbidden(username) {
+  const normalized = username.toLowerCase().replace(/[0134@$]/g, c => ({'0':'o','1':'i','3':'e','4':'a','@':'a','$':'s'})[c]||c);
+  return forbidden.some(word => stringSimilarity.compareTwoStrings(normalized, word) > 0.8);
 }
 
 export default async function handler(req, res) {

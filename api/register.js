@@ -2,7 +2,7 @@ import { Pool } from 'pg';
 import { google } from 'googleapis';
 
 // --- Configuration and AI Setup (Perspective API) ---
-const API_KEY = process.env.PERSPECTIVE_API_KEY; 
+const API_KEY = process.env.PERSPECTIVE_; 
 
 const perspective = google.commentanalyzer({
   version: 'v1alpha1',

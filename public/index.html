@@ -67,7 +67,7 @@
   async function registerUser() {
     const count = parseInt(localStorage.getItem("accountsOwned") || "0", 10);
 
-    if (count >= 1) {
+    if (count >= 3) {
       alert("Max accounts created.");
       return;
     }

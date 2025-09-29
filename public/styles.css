@@ -12,7 +12,7 @@ body {
 }
 
 input {
-  background: rgba(255, 255, 255, 0.08);  /* translucent */
+  background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(12px) saturate(180%);
   -webkit-backdrop-filter: blur(12px) saturate(180%);
   color: #f5f5f5;
@@ -27,7 +27,6 @@ input {
   box-shadow: 0 4px 14px rgba(0,0,0,0.25);
 }
 
-/* Placeholder style */
 input::placeholder {
   color: rgba(245, 245, 245, 0.5);
 }
@@ -66,6 +65,7 @@ button:active {
 #logout {
   background: rgba(220, 38, 38, 0.2);
   border: 1px solid rgba(220, 38, 38, 0.4);
+  transition: 0.15s;
 }
 
 #logout:hover {

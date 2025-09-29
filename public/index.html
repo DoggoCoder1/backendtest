@@ -65,44 +65,46 @@
   }
 
   async function registerUser() {
-    if (localStorage.getItem("accountsOwned") > 1) {
-      alert("Max accounts created.")
-    } else {
-      localStorage.setItem(
-        "accountsOwned",
-          String((parseInt(localStorage.getItem("accountsOwned") || "0", 10) || 0) + 1)
-      );
-      const username = document.getElementById('registerUsername').value.trim();
-      const password = document.getElementById('registerPassword').value;
-      const msg = document.getElementById('registerMessage');
+    const count = parseInt(localStorage.getItem("accountsOwned") || "0", 10);
 
-      if (!username || !password) {
-        msg.textContent = 'Please enter both username and password.';
-        msg.style.color = 'red';
-        return;
-      }
+    if (count >= 1) {
+      alert("Max accounts created.");
+      return;
+    }
 
-      try {
-        const res = await fetch('/api/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password })
-        });
-        const data = await res.json();
-        if (res.ok) {
-          msg.textContent = 'Registered! You can now log in.';
-          msg.style.color = 'green';
-        } else {
-          msg.textContent = data.error || 'Registration failed.';
-          msg.style.color = 'red';
-        }
-      } catch (err) {
-        console.error(err);
-        msg.textContent = 'Something went wrong.';
+    const username = document.getElementById('registerUsername').value.trim();
+    const password = document.getElementById('registerPassword').value;
+    const msg = document.getElementById('registerMessage');
+
+    if (!username || !password) {
+      msg.textContent = 'Please enter both username and password.';
+      msg.style.color = 'red';
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        localStorage.setItem("accountsOwned", String(count + 1));
+        msg.textContent = 'Registered! You can now log in.';
+        msg.style.color = 'green';
+      } else {
+        msg.textContent = data.error || 'Registration failed.';
         msg.style.color = 'red';
       }
+    } catch (err) {
+      console.error(err);
+      msg.textContent = 'Something went wrong.';
+      msg.style.color = 'red';
     }
   }
+
 
   async function loginUser() {
     const username = document.getElementById('loginUsername').value.trim();

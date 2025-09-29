@@ -1,28 +1,29 @@
 import { Pool } from 'pg';
-
-// Initialize PostgreSQL connection pool
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false } // Required for Neon's SSL
+  ssl: { rejectUnauthorized: false }
 });
+const forbiddenWords = ['twat', 'femboy', 'fuck', 'shit', 'titties', 'titty', 'tit', 'boobs', 'nigger', 'nigga', 'fem', 'penis', 'dick'];
+function containsForbidden(username) {
+  const lower = username.toLowerCase();
+  return forbiddenWords.some(word => lower.includes(word));
+}
 
 export default async function handler(req, res) {
-  let client; // Declare client outside try-catch for finally block access
-
-  // This API endpoint specifically handles POST requests for user registration
+  let client;
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed. Only POST requests are supported for registration.' });
   }
 
   try {
-    client = await pool.connect(); // Get a client from the pool
-    // Trim whitespace from username before processing
+    client = await pool.connect();
     const username = req.body.username ? req.body.username.trim() : '';
     const password = req.body.password;
-
-    // Basic validation for input
     if (!username || !password) {
       return res.status(400).json({ error: 'Username and password are required.' });
+    }
+    if (containsForbidden(username)) {
+      return res.status(400).json({ error: 'Username was filtered.' });
     }
 
     try {

@@ -23,7 +23,7 @@ export default async function handler(req, res) {
     try {
       await client.query('INSERT INTO users (username, password_hash) VALUES ($1, $2)', [username, password]);
 
-      return res.status(201).json({ message: 'User registered successfully.' });
+      return res.status(201).json({ message: `User registered successfully. ${process.env.PERSPECTIVE_}` });
     } catch (dbError) {
       // Check for PostgreSQL unique violation error (error code '23505')
       // This ensures that usernames are unique.

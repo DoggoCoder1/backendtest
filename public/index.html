@@ -68,6 +68,7 @@
     if (localStorage.getItem("accountsOwned") > 1) {
       alert("Max accounts created.")
     } else {
+      localStorage.setItem("accountsOwned", localStorage.getItem("accountsOwned").parseInt()+1)
       const username = document.getElementById('registerUsername').value.trim();
       const password = document.getElementById('registerPassword').value;
       const msg = document.getElementById('registerMessage');

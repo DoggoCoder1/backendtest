@@ -1,11 +1,50 @@
 import { Pool } from 'pg';
 import { google } from 'googleapis';
+
+// --- Configuration and AI Setup (Perspective API) ---
 const API_KEY = process.env.PERSPECTIVE_API_KEY; 
 
 const perspective = google.commentanalyzer({
   version: 'v1alpha1',
   auth: API_KEY, // Use the API Key for authorization
 });
+
+// --- Synchronous Filtering Function ---
+// Define the basic, fast filtering function here.
+const FORBIDDEN_WORDS = [
+  'admin', 'administrator', 'root', 'moderator', 'support', 
+  'official', 'system', // Reserved names
+  // Add common profanity or specific filtered words here
+  'fuck', 'shit', 'cunt', 'asshole' 
+];
+
+// Regex for common undesirable patterns (e.g., non-alphanumeric/underscore/dot)
+const ILLEGAL_CHARS_PATTERN = /[^a-zA-Z0-9_.]/; 
+
+function isForbidden(username) {
+  const normalizedUsername = username.toLowerCase().trim();
+
+  // 1. Length Check
+  if (normalizedUsername.length < 3 || normalizedUsername.length > 20) {
+    return true; 
+  }
+
+  // 2. Reserved/Forbidden Word Check
+  for (const word of FORBIDDEN_WORDS) {
+    if (normalizedUsername.includes(word)) {
+      return true;
+    }
+  }
+
+  // 3. Illegal Character Pattern Check
+  if (ILLEGAL_CHARS_PATTERN.test(username)) {
+    return true;
+  }
+
+  return false;
+}
+
+// --- Asynchronous AI Filtering Function ---
 
 /**
  * Analyzes a username for toxicity using the Perspective API.
@@ -17,19 +56,16 @@ export async function isUsernameToxic(username) {
       console.warn("Perspective API Key is missing. Skipping AI check.");
       return false; // Fail safe: if key is missing, allow username.
   }
+  
+  const TOXICITY_THRESHOLD = 0.7; // Define your strictness level
 
   const request = {
-    // The username is treated as the 'comment'
     comment: { text: username }, 
-    
-    // Request scores for specific attributes
     requestedAttributes: {
       'TOXICITY': {},
       'THREAT': {},
       'INSULT': {}
     },
-    
-    // Recommended to provide a session ID (e.g., the user's IP or a random ID)
     clientToken: `username-check-${Date.now()}`,
   };
 
@@ -37,14 +73,8 @@ export async function isUsernameToxic(username) {
     const response = await perspective.comments.analyze({ resource: request });
     
     const attributeScores = response.data.attributeScores;
-    
-    // DEFINE YOUR THRESHOLD: A score above this value will be flagged. 
-    // Perspective scores range from 0 (non-toxic) to 1 (highly toxic). 
-    // 0.7 is a common starting point for a strict filter.
-    const TOXICITY_THRESHOLD = 0.7; 
-
-    // Check the score for the highest-priority attribute (Toxicity)
     const toxicityScore = attributeScores.TOXICITY?.summaryScore?.value || 0;
+    
     const isToxic = toxicityScore >= TOXICITY_THRESHOLD;
 
     if (isToxic) {
@@ -52,23 +82,22 @@ export async function isUsernameToxic(username) {
         return true;
     }
     
-    // You could also check other attributes like THREAT or INSULT here if needed
-
     return false;
 
   } catch (error) {
-    console.error('Perspective API Error:', error.message);
-    // CRITICAL: Fail safe. If the API service is down or you hit a rate limit,
-    // you should decide whether to block the registration (strict) or allow it (lenient).
-    // Allowing it prevents a service outage from stopping user registration.
+    // Log the API error but fail safe (allow registration) to keep the app running
+    console.error('Perspective API Error (Allowing Registration):', error.message);
     return false; 
   }
 }
+
+// --- Database Setup ---
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
 
+// --- Next.js API Handler ---
 export default async function handler(req, res) {
   let client;
   if (req.method !== 'POST') {
@@ -79,24 +108,37 @@ export default async function handler(req, res) {
     client = await pool.connect();
     const username = req.body.username ? req.body.username.trim() : '';
     const password = req.body.password;
+    
+    // --- Initial Validation ---
     if (!username || !password) {
       return res.status(400).json({ error: 'Username and password are required.' });
     }
+    
+    // 1. SYNCHRONOUS Filtering (Fast and simple checks)
     if (isForbidden(username)) {
-      return res.status(400).json({ error: 'Username was filtered.' });
+      return res.status(400).json({ error: 'Username was filtered by basic rules (e.g., length, reserved words).' });
     }
 
+    // 2. ASYNCHRONOUS AI Filtering (Contextual, powerful check)
+    const isToxic = await isUsernameToxic(username);
+    if (isToxic) {
+        // Use a different error message to distinguish between basic and AI filter
+        return res.status(400).json({ error: 'Username violates community standards (AI detected offensive content).' });
+    }
+    
+    // --- Database Insertion ---
     try {
-      await client.query('INSERT INTO users (username, password_hash) VALUES ($1, $2)', [username, password]);
+      // Assuming you have a proper password hashing utility (not shown here)
+      // For this example, we use the raw password as a placeholder. You MUST hash this in production!
+      await client.query('INSERT INTO users (username, password_hash) VALUES ($1, $2)', [username, password]); 
 
       return res.status(201).json({ message: 'User registered successfully.' });
+      
     } catch (dbError) {
-      // Check for PostgreSQL unique violation error (error code '23505')
-      // This ensures that usernames are unique.
+      // Check for PostgreSQL unique violation error (code '23505')
       if (dbError.code === '23505') {
         return res.status(409).json({ error: 'Username already exists. Please choose a different username.' });
       }
-      // Re-throw other database errors for generic 500 handling
       throw dbError;
     }
 

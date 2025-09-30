@@ -1,116 +1,5 @@
 import { Pool } from 'pg';
-const { google } = require('googleapis'); 
-
-const FORBIDDEN_WORDS = [
-    'fuck',
-    'twat',
-    'femboy',
-    'fmboy',
-    'nggr',
-    'nigga',
-    'nigger',
-    'shit',
-    'toilet',
-    'labubu',
-    'niger',
-    'nigre',
-    'twink',
-    'gay',
-    'twnk',
-    'fem',
-    'cum',
-    'kum',
-    'tomboy',
-    'tom',
-    'feet',
-    'toes',
-    'toe',
-    'licker',
-    'gabe',
-    'orn',
-    'sweat',
-];
-
-/**
- * Converts a string containing common leetspeak characters to standard characters.
- * @param {string} leetString - The string to de-leetify.
- * @returns {string} The de-leetified string in lowercase.
- */
-function deLeetify(leetString) {
-  if (typeof leetString !== 'string') {
-    return "";
-  }
-  let text = leetString.toLowerCase();
-  // Using a map for single character replacements.
-  const leetMap = {
-    '4': 'a',   
-    '@': 'a',   
-    '3': 'e',   
-    '8': 'b',   
-    '1': 'l', 
-    '|': 'l',   
-    '0': 'o',   
-    '9': 'g',   
-    '6': 'g',   
-    '5': 's',   
-    '$': 's',   
-    '7': 't',   
-    '+': 't',   
-    '\\/': 'v', // V-like
-    '\\/\\/': 'w', // W-like
-    '\\|/': 'y', // Y-like
-    '2': 'z'    
-  };
-  
-  // Handle multi-character leet first. Note the correct escaping for regex.
-  // The provided leetMap's V, W, Y mappings need to be handled carefully as they contain regex-special characters.
-  text = text
-    .replace(/\\\/\\\/|w/g, leetMap['\\/\\/'])
-    .replace(/\\\/|v/g, leetMap['\\/'])
-    .replace(/\\\|\\\/|y/g, leetMap['\\|/']);
-
-  // Handle single character replacements
-  for (const [leetChar, standardChar] of Object.entries(leetMap)) {
-    // Only apply for single-character leets (to avoid issues with V, W, Y placeholders)
-    if (leetChar.length === 1) { 
-      // Escape special characters in the leetChar for use in a RegExp constructor
-      const escapedChar = leetChar.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); 
-      const regex = new RegExp(escapedChar, 'g');
-      text = text.replace(regex, standardChar);
-    }
-  }
-  
-  // Special case for '1' which is often 'i' or 'l'. The map already handles 'l', so we do 'i' last.
-  text = text.replace(/1/g, 'i');
-  
-  // Remove non-alphanumeric characters (can be used as separators to bypass filters)
-  text = text.replace(/[^a-z0-9]/g, '');
-
-  return text;
-}
-
-/**
- * Checks if a username, potentially using leetspeak, contains any forbidden words.
- * @param {string} username - The username to check.
- * @returns {boolean} True if the username contains a forbidden word, false otherwise.
- */
-function checkUsername(username) {
-  if (typeof username !== 'string' || username.length === 0) {
-    return true; // Consider empty/invalid usernames as a failure state
-  }
-
-  // 1. De-leetify and normalize the username for comparison
-  const normalizedUsername = deLeetify(username);
-  
-  // 2. Check if the normalized username contains any forbidden words
-  for (const word of FORBIDDEN_WORDS) {
-    if (normalizedUsername.includes(word.toLowerCase())) {
-      return true; // Found a forbidden word
-    }
-  }
-
-  return false; // No forbidden words found
-}
+import { clean } from 'profanity-cleaner';
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -132,11 +21,13 @@ export default async function handler(req, res) {
     if (!username || !password) {
       return res.status(400).json({ error: 'Username and password are required.' });
     }
-    
-    // Call the newly implemented checkUsername function
-    if (checkUsername(username)) { // 💡 Corrected the check to use the function
-      return res.status(400).json({ error: 'Failed to sign up: Username contains forbidden words.' });
+    if (clean(text).includes("*")) {
+      return res.status(400).json({ error: 'Username was filtered.' });
     }
+    // Call the newly implemented checkUsername function
+    //if (checkUsername(username)) { // 💡 Corrected the check to use the function
+    //  return res.status(400).json({ error: 'Failed to sign up: Username contains forbidden words.' });
+    //}
     
     // Optional: Add length checks for username/password here
     // Example: if (username.length < 3 || username.length > 20) { ... }

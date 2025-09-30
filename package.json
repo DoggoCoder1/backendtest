@@ -16,6 +16,7 @@
     "googleapis": "^160.0.0",
     "jsonwebtoken": "^9.0.2",
     "pg": "^8.16.3",
+    "profanity-cleaner": "^0.0.3",
     "string-similarity": "^4.0.4"
   }
 }

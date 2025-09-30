@@ -74,12 +74,6 @@
   }
 
   async function registerUser() {
-    const count = parseInt(localStorage.getItem("accountsOwned") || "0", 10);
-
-    if (count >= 3) {
-      alert("Max accounts created.");
-      return;
-    }
 
     const username = document.getElementById('registerUsername').value.trim();
     const password = document.getElementById('registerPassword').value;
@@ -100,7 +94,6 @@
       const data = await res.json();
 
       if (res.ok) {
-        localStorage.setItem("accountsOwned", String(count + 1));
         msg.textContent = 'Registered! You can now log in.';
         msg.style.color = 'green';
       } else {

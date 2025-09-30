@@ -21,7 +21,7 @@ export default async function handler(req, res) {
     if (!username || !password) {
       return res.status(400).json({ error: 'Username and password are required.' });
     }
-    if (clean(text).includes("*")) {
+    if (clean(username).includes("*")) {
       return res.status(400).json({ error: 'Username was filtered.' });
     }
     // Call the newly implemented checkUsername function

@@ -3,88 +3,135 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>wow clicker (v1.0.r)</title>
+  <title>wow clicker (v1.0.r) - Optimized</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel=stylesheet href="/styles.css">
 </head>
 <body>
-  <div class="ad">
+  <div class="ad" id="changelogAd">
     <h1>changelog</h1>
-    <p>v1.0 - launch</p>
-    <p>v1.1 - gui update, changed leaderboard from 10 to 20 players, added account limits.</p>
     <p>v1.2 - removed account limits, added decent username filtering.</p>
-    <button onclick="this.parentNode.style.display = 'none'">go away</button>
+    <button onclick="document.getElementById('changelogAd').style.display = 'none'">go away</button>
   </div>
+  
   <div id="authSection">
-    <h1">Sign In / Register</h1>
+    <h1>Sign In / Register</h1>
     <p style="color: red;">** Before you register please note that usernames may be offensive or innapropriate, please be mature when creating a username.</p>
+    
     <h2>Register</h2>
-    <input id="registerUsername" placeholder="Username" type="text">
-    <input id="registerPassword" placeholder="Password" type="password">
+    <input id="registerUsername" placeholder="Username" type="text" autocomplete="username">
+    <input id="registerPassword" placeholder="Password" type="password" autocomplete="new-password">
     <button onclick="registerUser()">Register</button>
     <p id="registerMessage"></p>
 
     <h2>Login</h2>
-    <input id="loginUsername" placeholder="Username" type="text">
-    <input id="loginPassword" placeholder="Password" type="password">
+    <input id="loginUsername" placeholder="Username" type="text" autocomplete="username">
+    <input id="loginPassword" placeholder="Password" type="password" autocomplete="current-password">
     <button onclick="loginUser()">Sign In</button>
     <p id="loginMessage"></p>
   </div>
 
   <div id="clickerSection" style="display:none;">
-  <button onclick="logout()" id="logout">Logout</button>
-  <p>Logged in as: <strong id="loggedInUsername"></strong></p>
-  <h3>Your Clicks: <span id="userClickCount">0</span></h3>
-  <button onclick="sendClick(currentUsername)">Click Me!</button>
+    <button onclick="logout()" id="logout">Logout</button>
+    <p>Logged in as: <strong id="loggedInUsername"></strong></p>
+    <h3>Your Clicks: <span id="userClickCount">0</span></h3>
+    <button onclick="sendClick()">Click Me!</button>
 
-  <h3>🏆 Top 20 Leaderboard</h3>
-  <ol id="leaderboardList"></ol>
-  <h1>honorable mentions</h1>
-  <div class="ad"><img src="images/chees.png"></div>
-  <div class="ad"><img src="images/alec.png"></div>
+    <h3>🏆 Top 20 Leaderboard</h3>
+    <ol id="leaderboardList"></ol>
+    
+    <h1>honorable mentions</h1>
+    <div class="ad"><img src="images/chees.png" alt="Chees"></div>
+    <div class="ad"><img src="images/alec.png" alt="Alec"></div>
   </div>
+  
   <div style="display: inline-flex; align-items: center; gap: 10px;">
-      <p style="margin: 0; font-size: 16px;">Fluxion Development</p>
-      
-      <img src="fluxion.png" style="height: 24px; width: auto;">
+    <p style="margin: 0; font-size: 16px;">Fluxion Development</p>
+    <img src="fluxion.png" style="height: 24px; width: auto;" alt="Fluxion Development Logo">
   </div>
   
 
 <script>
+  // Console message kept as it seems to be an intended developer note
+  console.log("Alto get out of my code");
+  
+  // State variables
   let token = localStorage.getItem('chatToken');
   let currentUsername = localStorage.getItem('chatUsername');
-  let clientClicks = 0;
+  let clientClicks = 0; // The source of truth on the client, synced with server
+  let leaderboardInterval; // To hold the interval ID for cleanup
 
+  // DOM Elements
   const authSection = document.getElementById('authSection');
   const clickerSection = document.getElementById('clickerSection');
   const loggedInUsernameDisplay = document.getElementById('loggedInUsername');
   const clickDisplay = document.getElementById('userClickCount');
   const leaderboardList = document.getElementById('leaderboardList');
 
-  function updateUI() {
-    clickDisplay.textContent = clientClicks;
+  // Helper for structured API headers
+  const getHeaders = (hasAuth = false) => {
+    const headers = { 'Content-Type': 'application/json' };
+    if (hasAuth && token) {
+      // Standard practice: Authorization header with Bearer token
+      headers['Authorization'] = `Bearer ${token}`; 
+    }
+    return headers;
+  };
+
+  /**
+   * Main function to switch between Auth and Clicker UIs.
+   */
+  function updateUIState() {
     if (token && currentUsername) {
+      // Logged In State
       authSection.style.display = 'none';
       clickerSection.style.display = 'block';
       loggedInUsernameDisplay.textContent = currentUsername;
-      fetchLeaderboard();
-      getUserClickCount();
+      
+      // Start the update loop only if logged in
+      if (!leaderboardInterval) {
+        // Initial fetch, then set interval
+        getUserClickCount();
+        fetchLeaderboard();
+        leaderboardInterval = setInterval(fetchDataUpdates, 5000); // Fetch data every 5 seconds
+      }
+
     } else {
+      // Logged Out State
       authSection.style.display = 'block';
       clickerSection.style.display = 'none';
       leaderboardList.innerHTML = '';
-      userClickCountEl.textContent = '0';
+      clickDisplay.textContent = '0';
+      clientClicks = 0;
+      
+      // Stop the update loop if logged out
+      if (leaderboardInterval) {
+        clearInterval(leaderboardInterval);
+        leaderboardInterval = null;
+      }
     }
+    // Always update client display immediately
+    clickDisplay.textContent = clientClicks;
+  }
+  
+  /**
+   * Function run by the interval to keep data fresh.
+   */
+  function fetchDataUpdates() {
+      getUserClickCount();
+      fetchLeaderboard();
   }
 
-  async function registerUser() {
+  // --- Authentication Handlers ---
 
+  async function registerUser() {
     const username = document.getElementById('registerUsername').value.trim();
     const password = document.getElementById('registerPassword').value;
     const msg = document.getElementById('registerMessage');
+    msg.textContent = ''; // Clear previous message
 
     if (!username || !password) {
       msg.textContent = 'Please enter both username and password.';
@@ -95,7 +142,7 @@
     try {
       const res = await fetch('/api/register', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getHeaders(),
         body: JSON.stringify({ username, password })
       });
       const data = await res.json();
@@ -103,22 +150,25 @@
       if (res.ok) {
         msg.textContent = 'Registered! You can now log in.';
         msg.style.color = 'green';
+        // Clear inputs after successful registration
+        document.getElementById('registerUsername').value = '';
+        document.getElementById('registerPassword').value = '';
       } else {
         msg.textContent = data.error || 'Registration failed.';
         msg.style.color = 'red';
       }
     } catch (err) {
-      console.error(err);
-      msg.textContent = 'Something went wrong.';
+      console.error('Registration fetch error:', err);
+      msg.textContent = 'Something went wrong with the network.';
       msg.style.color = 'red';
     }
   }
-
 
   async function loginUser() {
     const username = document.getElementById('loginUsername').value.trim();
     const password = document.getElementById('loginPassword').value;
     const msg = document.getElementById('loginMessage');
+    msg.textContent = ''; // Clear previous message
 
     if (!username || !password) {
       msg.textContent = 'Please enter both username and password.';
@@ -129,23 +179,29 @@
     try {
       const res = await fetch('/api/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getHeaders(),
         body: JSON.stringify({ username, password })
       });
       const data = await res.json();
+      
       if (res.ok) {
         token = data.token;
         currentUsername = data.username;
         localStorage.setItem('chatToken', token);
         localStorage.setItem('chatUsername', currentUsername);
-        updateUI();
+        
+        // Clear login inputs
+        document.getElementById('loginUsername').value = '';
+        document.getElementById('loginPassword').value = '';
+
+        updateUIState();
       } else {
         msg.textContent = data.error || 'Login failed.';
         msg.style.color = 'red';
       }
     } catch (err) {
-      console.error(err);
-      msg.textContent = 'Something went wrong.';
+      console.error('Login fetch error:', err);
+      msg.textContent = 'Something went wrong with the network.';
       msg.style.color = 'red';
     }
   }
@@ -155,60 +211,99 @@
     currentUsername = null;
     localStorage.removeItem('chatToken');
     localStorage.removeItem('chatUsername');
-    updateUI();
+    updateUIState();
   }
 
-async function sendClick(username) {
-  clientClicks++;
-  clickDisplay.textContent = clientClicks;
-  try {
-    const res = await fetch('/api/click', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ username }) 
-    });
+  // --- Clicker Handlers ---
 
-    const data = await res.json();
-  } catch (err) {
-    console.error('Click failed:', err);
-  }
-}
-
-async function getUserClickCount() {
-  try {
-    const res = await fetch('/api/clicks', {
-      headers: {
-        'X-Username': currentUsername  
-      }
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-      clientClicks = data.clickCount; 
+  async function sendClick() {
+    // Optimistic UI update
+    clientClicks++;
+    clickDisplay.textContent = clientClicks;
+    
+    // Check if authenticated before sending
+    if (!token) {
+        console.error('User not authenticated for click action.');
+        clientClicks--; // Revert optimistic update
+        clickDisplay.textContent = clientClicks; 
+        updateUIState(); // Force re-authentication
+        return;
     }
-  } catch (err) {
-    console.error('Fetch click count error:', err);
+
+    try {
+      const res = await fetch('/api/click', {
+        method: 'POST',
+        // Pass the token for authentication
+        headers: getHeaders(true) 
+        // No body needed if the server authenticates and identifies the user via the token
+      });
+      
+      const data = await res.json();
+      
+      if (res.ok) {
+          // Optional: Update clientClicks with the exact server count for precision
+          if (data.newClickCount !== undefined) {
+             clientClicks = data.newClickCount;
+             clickDisplay.textContent = clientClicks;
+          }
+      } else {
+          // Click failed on server (e.g., rate limit, invalid token)
+          console.error('Server click error:', data.error);
+          clientClicks--; // Revert optimistic update
+          clickDisplay.textContent = clientClicks;
+      }
+    } catch (err) {
+      console.error('Click network error:', err);
+      clientClicks--; // Revert optimistic update
+      clickDisplay.textContent = clientClicks;
+    }
   }
-}
+
+  async function getUserClickCount() {
+    if (!token) return;
+
+    try {
+      const res = await fetch('/api/clicks', {
+        method: 'GET',
+        // Pass the token for authentication
+        headers: getHeaders(true) 
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        // **BUG FIX/SYNC:** Use the server's authoritative click count to sync the client.
+        clientClicks = data.clickCount; 
+        clickDisplay.textContent = clientClicks;
+      } else if (res.status === 401) {
+          // Token expired or invalid
+          logout(); 
+      }
+    } catch (err) {
+      console.error('Fetch click count error:', err);
+    }
+  }
 
   async function fetchLeaderboard() {
     try {
       const res = await fetch('/api/leaderboard');
-      const data = await res.json();
-      leaderboardList.innerHTML = '';
-      data.leaderboard.forEach(user => {
-        const li = document.createElement('li');
-        li.textContent = `${user.username} - ${user.click_count} clicks`;
-        leaderboardList.appendChild(li);
-      });
+      
+      if (res.ok) {
+          const data = await res.json();
+          leaderboardList.innerHTML = '';
+          data.leaderboard.forEach(user => {
+            const li = document.createElement('li');
+            // Ensure click_count is displayed correctly, assuming it's a number
+            li.textContent = `${user.username} - ${user.click_count.toLocaleString()} clicks`; 
+            leaderboardList.appendChild(li);
+          });
+      }
     } catch (err) {
       console.error('Leaderboard fetch error:', err);
     }
   }
-  setInterval(updateUI, 1000);
-  updateUI();
+  
+  // Initial call to set the UI state
+  updateUIState();
 </script>
 
 </body>

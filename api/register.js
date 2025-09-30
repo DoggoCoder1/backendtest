@@ -22,7 +22,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Username and password are required.' });
     }
     if (clean(username).includes("*")) {
-      return res.status(400).json({ error: 'Username was filtered.' });
+      return res.status(400).json({ error: 'Username was filtered. ' + clean(username) });
     }
     // Call the newly implemented checkUsername function
     //if (checkUsername(username)) { // 💡 Corrected the check to use the function
